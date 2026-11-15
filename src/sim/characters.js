@@ -17,7 +17,7 @@ export const CHARACTERS = {
     blurb: 'Lutteur puissant. Saisies, projections et une résistance hors norme.',
     style: 'Grappler',
     stats: { force: 5, vitesse: 2, portee: 2, defense: 5 },
-    hp: 1100, defense: 0.93,
+    hp: 1120, defense: 0.93,
     walk: 0.039, backWalk: 0.029,
     jumpV: 0.185, jumpVX: 0.05,
     pushWidth: 0.44,
@@ -34,7 +34,7 @@ export const CHARACTERS = {
         advance: 0.5,
         armor: [2, 9],     // encaisse un coup pendant l'élan : c'est l'outil d'approche du lutteur
         motion(f, fr) { f.vx = fr >= 4 && fr <= 12 ? f.facing * (this.advance / 9) : f.vx * 0.6; },
-        hits: [hit({ start: 10, end: 13, reach: [0.1, 0.95], height: [0.6, 1.6], damage: 78, hitstun: 22, blockstun: 16, push: 0.1, knockdown: true, launch: 0.12 })],
+        hits: [hit({ start: 10, end: 13, reach: [0.1, 0.95], height: [0.6, 1.6], damage: 84, hitstun: 22, blockstun: 16, push: 0.1, knockdown: true, launch: 0.12 })],
       },
       heavy: {
         id: 'heavy', name: 'Saisie de la Médina', total: 42, cancels: [],
@@ -42,7 +42,7 @@ export const CHARACTERS = {
         advance: 0.45,
         motion(f, fr) { f.vx = fr <= 8 ? f.facing * (this.advance / 8) : f.vx * 0.6; },
         hits: [hit({ start: 6, end: 9, kind: 'throw', reach: [0.0, 1.15], height: [0, 1.9], damage: 0 })],
-        throwAnim: { length: 52, slamAt: 34, damage: 120, fx: 'slam' },
+        throwAnim: { length: 52, slamAt: 34, damage: 132, fx: 'slam' },
       },
       air: {
         id: 'air', name: 'Chute du Roc', total: 60, cancels: [],
