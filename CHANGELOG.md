@@ -23,10 +23,16 @@
 - Bouclier de Themba : dégâts d'usure divisés par deux au lieu d'annulés. Iklwa plus sûre en garde.
 - Dégâts d'usure des pouvoirs spéciaux : 15–18 % → 25 %.
 
+### Corrections après relecture
+- `npm test` exécute bien les 79 tests (le script visait un dossier au lieu des fichiers de test).
+- Statistique des anti-aériens : comptée une fois par saut adverse, elle ne peut plus dépasser 100 %.
+- Les mesures d'endurance sont étiquetées avec le moteur de rendu détecté.
+
 ### Ajouts
 - 79 tests automatisés (`npm test`) : fuzz avec invariants, couverture des coups, boucle, équilibrage, déterminisme.
 - Rapport d'équilibrage reproductible (`npm run balance`).
-- Test d'endurance dans un vrai navigateur (`npm run soak`).
+- Test d'endurance dans un vrai navigateur (`npm run soak`) : mesure de stabilité en rendu logiciel,
+  pas de performances matérielles (voir `docs/mesures/README.md`).
 - Mesures de performances en jeu : touche **F3** ou `?perf=1`.
 
 ## 1.0.0-beta — Version de référence

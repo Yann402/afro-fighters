@@ -283,7 +283,7 @@ export class Match {
 
     this.hitstop = h.hitstop ?? Math.round(5 + dmg / 18);
     const heavy = dmg >= 80 || h.knockdown;
-    this.emit({ type: 'hit', x: hx, y: midY, f: def.index, by: att.index, dmg, heavy, combo: def.combo, special: !!move.special, char: att.char.id, moveId: move.id, air: def.y > 0.05, attAir: att.y > 0.05 });
+    this.emit({ type: 'hit', x: hx, y: midY, f: def.index, by: att.index, dmg, heavy, combo: def.combo, special: !!move.special, char: att.char.id, moveId: move.id, air: def.y > 0.05, attAir: att.y > 0.05, jumping: def.state === 'air' || def.state === 'airattack' });
 
     if (def.hp <= 0) { this.koFighter(def, att.facing); return; }
 

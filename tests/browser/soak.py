@@ -5,6 +5,11 @@ Enchaîne des matchs complets IA contre IA, des changements de combattant et des
 et relève après chaque cycle les ressources graphiques vivantes et la mémoire JavaScript.
 Le test échoue si le nombre de géométries ou de textures augmente d'un cycle à l'autre (fuite).
 
+C'est un test de STABILITÉ, pas de performances. Chrome sans interface utilise ici un rendu logiciel
+(SwiftShader, sans carte graphique) : les colonnes « img/s » et « image p95 ms » décrivent cet
+environnement et ne sont pas une référence de performances matérielles. Le moteur de rendu détecté
+est écrit en tête du rapport. Pour des performances réelles : touche F3 dans le jeu, sur une vraie machine.
+
 Usage :  python3 tests/browser/soak.py [--cycles 6] [--url http://localhost:8000/] [--legacy] [--json sortie.json]
 Prérequis : pip install playwright ; un serveur statique sur le dossier du jeu (npm start).
 --legacy : mesure la version 1.0 (ancienne interface de test), pour comparaison avant/après.
@@ -40,6 +45,7 @@ def main():
         pg.on('pageerror', lambda e: errors.append(str(e)))
         pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' and '404' not in m.text else None)
         pg.goto(args.url); time.sleep(2.5)
+        env = {'name': 'inconnu (version 1.0)', 'software': True} if args.legacy else pg.evaluate(f"{G}.perf.snapshot().renderer")
         rows.append({'cycle': 0, 'étape': 'écran titre', **pg.evaluate(SNAP)})
         for c in range(1, args.cycles + 1):
             ch = ROSTER[(c - 1) % 3]
@@ -76,6 +82,8 @@ def main():
         b.close()
 
     cols = ['cycle', 'étape', 'geometries', 'textures', 'programs', 'sceneChildren', 'heapMB', 'pic géométries', 'durée s', 'img/s', 'image p95 ms', 'sim ms', 'rendu ms', 'abandonné s']
+    print(f"Moteur de rendu : {env['name']}")
+    print('Nature des mesures : ' + ('STABILITÉ en rendu logiciel — img/s et durées d\'image non représentatives du matériel' if env['software'] else 'rendu matériel'))
     print(' | '.join(cols))
     for r in rows: print(' | '.join(str(r.get(k, '')) for k in cols))
     titles = [r for r in rows if r['étape'] == 'retour au titre']
@@ -86,7 +94,7 @@ def main():
     print(f"Textures   : {titles[0]['textures']} -> {titles[-1]['textures']} (écart {leak_t:+d})")
     if heap: print(f"Mémoire JS après ramasse-miettes : {heap[0]} Mo -> {heap[-1]} Mo (pic {max(r['heapMB'] or 0 for r in rows)} Mo)")
     print('Erreurs de page :', errors or 'aucune')
-    if args.json: json.dump({'rows': rows, 'errors': errors}, open(args.json, 'w'), ensure_ascii=False, indent=1)
+    if args.json: json.dump({'renderer': env, 'rows': rows, 'errors': errors}, open(args.json, 'w'), ensure_ascii=False, indent=1)
     ok = leak_g <= 0 and leak_t <= 0 and not errors
     print('RÉSULTAT :', 'OK' if ok else 'ÉCHEC')
     sys.exit(0 if ok else 1)

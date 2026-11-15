@@ -6,10 +6,11 @@
   "description": "Jeu de combat 3D inspiré des cultures africaines — jouable dans le navigateur",
   "scripts": {
     "start": "python3 -m http.server 8000",
-    "test": "node --test tests/unit/",
+    "test": "node --test \"tests/unit/*.test.mjs\"",
     "balance": "node tools/balance.mjs",
     "soak": "python3 tests/browser/soak.py",
     "smoke": "python3 tests/browser/smoke.py"
   },
+  "engines": { "node": ">=21" },
   "license": "UNLICENSED"
 }

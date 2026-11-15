@@ -25,9 +25,10 @@ export function analyse(diffA, diffB = diffA, n = N) {
       const ids = [a, b];
       const cur = [null, null];          // spécial en cours par combattant
       const seq = [0, 0];                // dégâts du combo en cours subi par chaque combattant
+      const jumpOpen = [false, false];   // saut en cours pas encore contré (un anti-aérien au plus par saut)
       const onEvent = (e, m) => {
         if (e.type === 'special') { spec[ids[e.f]].uses++; cur[e.f] = { dmg: 0, blocked: false, end: -1 }; }
-        if (e.type === 'jump') { air[ids[e.f]].jumps++; air[ids[1 - e.f]].oppJumps++; }
+        if (e.type === 'jump') { air[ids[e.f]].jumps++; air[ids[1 - e.f]].oppJumps++; jumpOpen[e.f] = true; }
         if (e.type === 'roundEnd' && e.reason === 'time') timeouts++;
         if (e.type === 'hit' || e.type === 'slam') {
           const by = e.by, d = e.f;
@@ -37,7 +38,10 @@ export function analyse(diffA, diffB = diffA, n = N) {
           const c = combo[ids[by]];
           if (seq[d] > c.max) { c.max = seq[d]; c.maxPct = Math.round(seq[d] / CHARACTERS[ids[d]].hp * 100); }
           if (e.type === 'hit') {
-            if (e.air && !e.attAir) air[ids[by]].antiAirHits++;
+            // Anti-aérien : un attaquant au sol touche un adversaire qui SAUTE, compté une fois par saut.
+            // L'ancienne mesure comptait aussi chaque coup porté à un adversaire déjà projeté en l'air
+            // (jongle), d'où des taux supérieurs à 100 %.
+            if (e.jumping && !e.attAir && jumpOpen[d]) { air[ids[by]].antiAirHits++; jumpOpen[d] = false; }
             if (e.attAir && e.moveId === 'air') air[ids[by]].jumpHits++;
           }
         }
@@ -88,7 +92,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log(`  ${id.padEnd(9)} utilisés ${String(s.uses).padStart(4)} · touche ${pct(s.hit, s.uses)}% · bloqué ${pct(s.blocked, s.uses)}% · dans le vide ${pct(s.whiff, s.uses)}% · puni ensuite ${pct(s.punished, s.uses)}% · dégâts moyens/usage ${(s.dmg / Math.max(1, s.uses)).toFixed(0)}`);
     }
     console.log('Combo maximal observé :', ROSTER.map((id) => `${id} ${r.combo[id].max} (${r.combo[id].maxPct}% des PV)`).join(' · '));
-    console.log('Jeu aérien :', ROSTER.map((id) => `${id} sauts ${r.air[id].jumps}, attaques sautées réussies ${pct(r.air[id].jumpHits, r.air[id].jumps)}%, anti-aériens réussis ${pct(r.air[id].antiAirHits, r.air[id].oppJumps)}%`).join(' · '));
+    console.log('Jeu aérien :', ROSTER.map((id) => `${id} : ${r.air[id].jumps} sauts dont ${pct(r.air[id].jumpHits, r.air[id].jumps)}% avec attaque sautée réussie ; ${pct(r.air[id].antiAirHits, r.air[id].oppJumps)}% des ${r.air[id].oppJumps} sauts adverses contrés au sol`).join(' · '));
   }
   if (asJson) console.log(JSON.stringify(out));
 }

@@ -19,6 +19,11 @@ for (const d of ['normal', 'difficile']) {
     }
     for (const id of ROSTER) assert.ok(r.combo[id].maxPct <= 45, `combo de ${id} : ${r.combo[id].maxPct} % des PV`);
     assert.equal(r.timeouts, 0, 'des manches se terminent au chrono : IA trop passive');
+    // les taux du jeu aérien sont des proportions : jamais plus d'un succès par saut
+    for (const id of ROSTER) {
+      assert.ok(r.air[id].antiAirHits <= r.air[id].oppJumps, `anti-aériens de ${id} : ${r.air[id].antiAirHits} pour ${r.air[id].oppJumps} sauts adverses`);
+      assert.ok(r.air[id].jumpHits <= r.air[id].jumps, `attaques sautées de ${id}`);
+    }
   });
 }
 

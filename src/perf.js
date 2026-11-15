@@ -24,6 +24,15 @@ export class Perf {
     this.el = null;
     this.lastPaint = 0;
     this.info = { calls: 0, triangles: 0 };
+    // Nom du moteur de rendu : permet de savoir si les mesures viennent d'une vraie carte graphique
+    // ou d'un rendu logiciel (SwiftShader, llvmpipe), auquel cas les images/s ne sont pas une référence.
+    this.gpuName = 'inconnu';
+    try {
+      const gl = renderer.getContext();
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      this.gpuName = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    } catch { /* indisponible */ }
+    this.software = /swiftshader|llvmpipe|software|basic render/i.test(this.gpuName);
   }
 
   frame(ms) {
@@ -55,6 +64,7 @@ export class Perf {
       heapMB: mem ? { used: +(mem.usedJSHeapSize / 1048576).toFixed(1), peak: +(this.heapPeak / 1048576).toFixed(1) } : null,
       loop: { droppedSec: +this.loop.dropped.toFixed(3), overloads: this.loop.overloads },
       frames: this.totalFrames,
+      renderer: { name: this.gpuName, software: this.software },
     };
   }
 
@@ -80,6 +90,7 @@ export class Perf {
       `graphique   ${s.gpu.geometries} géométries · ${s.gpu.textures} textures · ${s.gpu.programs} programmes\n` +
       `            ${s.gpu.drawCalls} appels de dessin · ${s.gpu.triangles} triangles\n` +
       (s.heapMB ? `mémoire JS  ${s.heapMB.used} Mo (pic ${s.heapMB.peak} Mo)\n` : 'mémoire JS  non mesurable dans ce navigateur\n') +
-      `boucle      ${s.loop.droppedSec} s abandonnées · ${s.loop.overloads} surcharges`;
+      `boucle      ${s.loop.droppedSec} s abandonnées · ${s.loop.overloads} surcharges\n` +
+      `moteur      ${this.gpuName.slice(0, 60)}` + (this.software ? '\n            RENDU LOGICIEL : images/s non représentatives' : '');
   }
 }

@@ -1,3 +1,8 @@
+Moteur de rendu : ANGLE (Mesa, llvmpipe) — rendu logiciel, sans carte graphique
+Nature des mesures : STABILITÉ en environnement logiciel. Les colonnes « img/s », « image p95 ms » et
+« abandonné s » décrivent cet environnement (environ 4 images/s, match accéléré 4 fois) ; elles ne sont
+pas une référence de performances matérielles. Ce qui fait foi ici : géométries, textures, mémoire, erreurs.
+
 cycle | étape | geometries | textures | programs | sceneChildren | heapMB | pic géométries | durée s | img/s | image p95 ms | sim ms | rendu ms | abandonné s
 0 | écran titre | 88 | 9 | 12 | 3 | 7 |  |  |  |  |  |  | 
 1 | fin de match (modou, IA facile) | 218 | 11 | 12 | 5 | 9.2 | 218 | 40.4 | 3.9 | 366.7 | 1.042 | 4.791 | 91.183

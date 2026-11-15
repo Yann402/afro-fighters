@@ -1,4 +1,9 @@
 {
+ "renderer": {
+  "name": "ANGLE (Mesa, llvmpipe)",
+  "software": true
+ },
+ "note": "Mesures de stabilité en rendu logiciel ; img/s et durées d'image non représentatives du matériel.",
  "rows": [
   {
    "cycle": 0,
