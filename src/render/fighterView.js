@@ -4,7 +4,7 @@ import { KEYS, ZERO, targetPose, smoothingRate } from './poses.js';
 
 const YAW = Math.PI / 2 - 0.5; // vue de 3/4 vers la caméra
 const qA = new THREE.Quaternion();
-const qB = new THREE.Quaternion();
+const qB = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.15, -0.35, 0)); // orientation fixe du bouclier
 
 export class FighterView {
   constructor(charId, scene) {
@@ -24,16 +24,24 @@ export class FighterView {
     this.yaw = YAW;
     this.mirror = 1;
     this.initMirror = true;
-    this.ghosts = null;
     this.hipBase = rig.J.hips.position.y;
     // contour léger (silhouette) pour lisibilité
     this.materials = [];
     rig.root.traverse((o) => { if (o.isMesh && !this.materials.includes(o.material)) this.materials.push(o.material); });
   }
 
+  // Propriété des ressources : chaque combattant possède ses géométries et ses matériaux
+  // (créés dans rig.js pour lui seul) et les libère ici. Les textures viennent d'un cache
+  // partagé entre tous les combattants (rig.js) : elles ne sont pas libérées.
+  // Les images rémanentes (fx.js) réutilisent ces géométries : appeler fx.clear() avant dispose().
   dispose(scene) {
     scene.remove(this.root);
-    if (this.ghosts) for (const g of this.ghosts) scene.remove(g.root);
+    const geos = new Set();
+    this.rig.root.traverse((o) => { if (o.isMesh) geos.add(o.geometry); });
+    for (const g of geos) g.dispose();
+    for (const m of this.materials) m.dispose();
+    this.materials.length = 0;
+    this.disposed = true;
   }
 
   snapPrev(f) { this.prevX = f.x; this.prevY = f.y; }
@@ -96,7 +104,6 @@ export class FighterView {
     const shield = this.rig.weapons.shield;
     if (shield) {
       qA.copy(J.shL.quaternion).multiply(J.elL.quaternion).invert();
-      qB.setFromEuler(new THREE.Euler(0.15, -0.35, 0));
       shield.quaternion.copy(qA).multiply(qB);
     }
 

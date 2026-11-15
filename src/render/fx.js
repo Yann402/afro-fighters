@@ -7,15 +7,10 @@ const MAX = 1400;
 export class FX {
   constructor(scene) {
     this.scene = scene;
-    const geo = new THREE.BufferGeometry();
-    this.pos = new Float32Array(MAX * 3);
-    this.col = new Float32Array(MAX * 3);
-    this.size = new Float32Array(MAX);
-    geo.setAttribute('position', new THREE.BufferAttribute(this.pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(this.col, 3));
-    geo.setAttribute('size', new THREE.BufferAttribute(this.size, 1));
-    this.parts = [];
     const tex = softDotTex();
+    this.tex = tex;
+    // une seule géométrie d'anneau, partagée par toutes les ondes de choc
+    this.ringGeo = new THREE.RingGeometry(0.8, 1, 40);
     const mkMat = (blending) => new THREE.ShaderMaterial({
       uniforms: { map: { value: tex }, scale: { value: 420 }, premul: { value: blending === THREE.AdditiveBlending ? 1 : 0 } },
       vertexShader: `attribute float size; attribute vec3 color; varying vec3 vColor; uniform float scale;
@@ -69,9 +64,8 @@ export class FX {
   }
 
   ring(x, y, color, max = 2.5, life = 0.45, ground = true) {
-    const geo = new THREE.RingGeometry(0.8, 1, 40);
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
-    const mesh = new THREE.Mesh(geo, mat);
+    const mesh = new THREE.Mesh(this.ringGeo, mat);
     if (ground) { mesh.rotation.x = -Math.PI / 2; mesh.position.set(x, 0.03, 0); }
     else mesh.position.set(x, y, 0.4);
     this.scene.add(mesh);
@@ -145,7 +139,7 @@ export class FX {
     this.rings = this.rings.filter((r) => {
       r.age += dt;
       const p = r.age / r.life;
-      if (p >= 1) { this.scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); return false; }
+      if (p >= 1) { this.scene.remove(r.mesh); r.mesh.material.dispose(); return false; }
       const s = 0.2 + (r.max) * (1 - (1 - p) * (1 - p));
       r.mesh.scale.set(s, s, s);
       r.mesh.material.opacity = 0.85 * (1 - p);
@@ -160,10 +154,21 @@ export class FX {
     });
   }
 
+  // Retire tous les effets en cours et libère ce qu'ils possèdent : un matériau par anneau et par
+  // image rémanente. La géométrie d'anneau est partagée ; celles des images rémanentes
+  // appartiennent au combattant copié. Aucune des deux n'est libérée ici.
   clear() {
-    for (const L of [this.glowLayer, this.dustLayer]) L.list.length = 0;
-    for (const r of this.rings) this.scene.remove(r.mesh);
-    for (const g of this.ghosts) this.scene.remove(g.obj);
+    for (const L of [this.glowLayer, this.dustLayer]) { L.list.length = 0; L.geo.setDrawRange(0, 0); }
+    for (const r of this.rings) { this.scene.remove(r.mesh); r.mesh.material.dispose(); }
+    for (const g of this.ghosts) { this.scene.remove(g.obj); g.mat.dispose(); }
     this.rings = []; this.ghosts = [];
+  }
+
+  // Libération complète (fermeture du jeu ou rechargement du moteur).
+  dispose() {
+    this.clear();
+    for (const L of [this.glowLayer, this.dustLayer]) { this.scene.remove(L.pts); L.geo.dispose(); L.pts.material.dispose(); }
+    this.ringGeo.dispose(); this.tex.dispose();
+    this.ghostMat.dispose(); this.ghostMatBlue.dispose();
   }
 }

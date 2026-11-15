@@ -128,3 +128,5 @@ h1 span { color: var(--gold); }
   .nameRow { font-size: 16px; }
   .timer { font-size: 38px; width: 60px; }
 }
+
+#perf { position: absolute; left: 10px; bottom: 34px; margin: 0; padding: 8px 12px; font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; color: #d8ffd0; background: rgba(0,0,0,0.72); border: 1px solid rgba(120,255,120,0.3); pointer-events: none; z-index: 20; white-space: pre; display: none; }

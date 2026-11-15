@@ -9,6 +9,8 @@ import { FX } from './render/fx.js';
 import { CameraRig } from './render/cameraRig.js';
 import { Input } from './input.js';
 import { Audio } from './audio.js';
+import { FixedStep } from './core/fixedStep.js';
+import { Perf } from './perf.js';
 
 // ───────────────────────────── Rendu
 const canvas = document.getElementById('c');
@@ -27,6 +29,10 @@ const arena = buildArena(scene, renderer);
 const fx = new FX(scene);
 const input = new Input();
 const audio = new Audio();
+const loop = new FixedStep(DT, 5);
+const perf = new Perf(renderer, loop);
+// Réglages de test (vitesse accélérée, joueur 1 piloté par une IA) : voir tests/browser/
+const debug = { speed: 1, p1ai: null };
 
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
@@ -50,11 +56,11 @@ const S = {
   ai: null,
   views: [null, null],
   preview: null,
-  acc: 0,
   timeScale: 1,
   slowmo: 0,
   focus: 0,
   menuIndex: 0,
+  idleFrames: 0,
   selectIndex: 0,
   resultTimer: 0,
   hpTrail: [1, 1],
@@ -126,7 +132,7 @@ function selectChanged() {
 
 function setPreview(id) {
   if (S.preview && S.preview.charId === id) return;
-  if (S.preview) S.preview.view.dispose(scene);
+  if (S.preview) { fx.clear(); S.preview.view.dispose(scene); }
   const view = new FighterView(id, scene);
   const fake = { char: CHARACTERS[id], state: 'win', t: 0, x: 0, y: 0, facing: 1, meter: 0, move: null, vy: 0 };
   view.prevX = 0; view.prevY = 0;
@@ -134,7 +140,7 @@ function setPreview(id) {
 }
 
 function clearPreview() {
-  if (S.preview) { S.preview.view.dispose(scene); S.preview = null; }
+  if (S.preview) { fx.clear(); S.preview.view.dispose(scene); S.preview = null; }
 }
 
 function confirmSelect() {
@@ -152,7 +158,7 @@ function startMatch() {
   S.ai = new AIController(S.difficulty, (Math.random() * 1e9) | 0);
   S.views = [new FighterView(S.playerChar, scene), new FighterView(S.cpuChar, scene)];
   S.match.fighters.forEach((f, i) => S.views[i].snapPrev(f));
-  S.acc = 0; S.slowmo = 0;
+  loop.reset(); S.slowmo = 0;
   S.hpTrail = [1, 1];
   S.comboTimer = [0, 0];
   $('c0').classList.remove('show'); $('c1').classList.remove('show');
@@ -168,6 +174,7 @@ function startMatch() {
 }
 
 function disposeFight() {
+  fx.clear(); // les images rémanentes réutilisent les géométries des combattants : les retirer d'abord
   for (const v of S.views) if (v) v.dispose(scene);
   S.views = [null, null];
   S.match = null;
@@ -315,22 +322,20 @@ function stepFight(dt) {
   // ralenti au K.O.
   let scale = 1;
   if (S.slowmo > 0) { S.slowmo -= dt; scale = 0.3; }
-  S.acc += dt * scale;
-  let steps = 0;
-  const maxSteps = 5 * (window.__speed || 1);
-  while (S.acc >= DT && steps < maxSteps) {
-    S.acc -= DT; steps++;
+  const t0 = performance.now();
+  loop.maxSteps = 5 * debug.speed;
+  loop.advance(dt * scale, () => {
     m.fighters.forEach((f, i) => S.views[i].snapPrev(f));
-    const p1 = window.__p1ai ? window.__p1ai.think(m.fighters[0], m.fighters[1], m) : input.read();
+    const p1 = debug.p1ai ? debug.p1ai.think(m.fighters[0], m.fighters[1], m) : input.read();
     const p2 = S.ai.think(m.fighters[1], m.fighters[0], m);
     m.step([p1, p2]);
     handleEvents(m.drainEvents());
     specialFX();
-  }
-  if (steps >= maxSteps) S.acc = 0;
+  });
+  perf.sim(performance.now() - t0);
   audio.tick();
 
-  const alpha = S.acc / DT;
+  const alpha = loop.alpha;
   const [a, b] = m.fighters;
   S.views[0].update(a, b, m, dt, alpha);
   S.views[1].update(b, a, m, dt, alpha);
@@ -501,7 +506,10 @@ input.onPadChange = (on, id) => toast(on ? `Manette connectée : ${id.split('(')
 let last = performance.now();
 let idleT = 0;
 function frame(now) {
-  const dt = Math.min(0.1, (now - last) / 1000) * (window.__speed || 1);
+  const rawMs = now - last;
+  perf.frame(rawMs);
+  // 0,25 s au plus : au-delà (onglet en arrière-plan), la boucle à pas fixe abandonne l'excès
+  const dt = Math.min(0.25, rawMs / 1000) * debug.speed;
   last = now;
   input.pollMenu();
   handleMenuInput(dt);
@@ -512,7 +520,9 @@ function frame(now) {
     // scène figée (pause) ou célébration (résultat)
     if (S.state === 'result') {
       const m = S.match;
-      for (const f of m.fighters) { f.t++; }
+      // animation de fin calée sur le temps réel, pas sur la fréquence de l'écran
+      S.idleFrames += dt * 60;
+      while (S.idleFrames >= 1) { S.idleFrames--; for (const f of m.fighters) f.t++; }
       S.views[0].update(m.fighters[0], m.fighters[1], m, dt, 1);
       S.views[1].update(m.fighters[1], m.fighters[0], m, dt, 1);
       camRig.update(dt, m.fighters[0], m.fighters[1]);
@@ -522,7 +532,8 @@ function frame(now) {
     idleT += dt;
     if (S.preview) {
       const p = S.preview;
-      p.fake.t++;
+      S.idleFrames += dt * 60;
+      while (S.idleFrames >= 1) { S.idleFrames--; p.fake.t++; }
       p.fake.state = S.state === 'diff' ? 'win' : 'idle';
       p.view.update(p.fake, p.fake, null, dt, 1);
       p.view.root.rotation.y = -0.85 + Math.sin(idleT * 0.5) * 0.3;
@@ -531,10 +542,12 @@ function frame(now) {
     camRig.mode = 'select';
     camRig.update(dt, { x: 0, y: 0 }, { x: 0, y: 0 });
   }
-  if (window.__dbg) { window.__dbg(camera, S, dt); }
   fx.update(dt);
   arena.update(dt);
+  const r0 = performance.now();
   renderer.render(scene, camera);
+  perf.render(performance.now() - r0);
+  perf.paint(now);
   requestAnimationFrame(frame);
 }
 
@@ -545,5 +558,9 @@ camRig.update(0.016, { x: 0, y: 0 }, { x: 0, y: 0 });
 camRig.snap();
 requestAnimationFrame((t) => { last = t; $('loading').classList.add('gone'); frame(t); });
 
-// Accès de débogage (tests automatisés)
-window.__game = { S, AIController, startMatch, setState, scene, camera, renderer, CHARACTERS, FighterView, THREE };
+// Mesures de performances : F3 ou ?perf=1
+window.addEventListener('keydown', (e) => { if (e.code === 'F3') { e.preventDefault(); perf.toggle(); } });
+if (new URLSearchParams(location.search).has('perf')) perf.toggle(true);
+
+// Interface de test et de diagnostic (utilisée par tests/browser/). Sans effet sur le jeu.
+window.__afro = { S, perf, loop, debug, fx, scene, camera, renderer, startMatch, goSelect, setState, menuAction, AIController, CHARACTERS, ROSTER };

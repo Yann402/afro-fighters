@@ -52,7 +52,7 @@ export const CHARACTERS = {
         cues: { 8: 'stomp', 20: 'stomp', 30: 'roar', 35: 'dash' },
       },
     },
-    special: { name: 'Bàkk', desc: 'Danse de défi du lutteur avec super-armure, puis charge et projection dévastatrice.' },
+    special: { name: 'Bàkk', desc: 'Danse de défi du lutteur avec super-armure, puis charge et projection imblocable. Se contre en sautant ou en frappant pendant la charge.' },
   },
 
   // ─────────────────────────────── ZOULOU (Afrique australe)
@@ -176,7 +176,7 @@ export const CHARACTERS = {
         cues: { 1: 'hop', 21: 'hop', 41: 'hop', 63: 'leap', 86: 'impact' },
       },
     },
-    special: { name: 'Adumu', desc: 'Les sauts rituels maasaï : trois bonds invulnérables, puis un piqué de lance qui frappe où que soit l’adversaire.' },
+    special: { name: 'Adumu', desc: 'Les sauts rituels maasaï : trois bonds, puis un piqué de lance qui suit l’adversaire. Invulnérable pendant les deux premiers bonds, à utiliser de loin.' },
   },
 };
 

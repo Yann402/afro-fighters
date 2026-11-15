@@ -8,6 +8,8 @@ Jeu de combat en 3D, jouable directement dans le navigateur, inspiré de trois t
 | **Themba**, l'Orage du Veld | Guerrier zoulou | Équilibré : iklwa et bouclier isihlangu | **Impondo Zankomo** : charge en « cornes du buffle » |
 | **Lekishon**, le Faucon de la Savane | Guerrier maasaï | Longue portée, aérien | **Adumu** : sauts rituels, puis piqué de lance |
 
+Nom de travail du projet : **Afro Fighters**. Titre affiché en jeu : « Légendes de l'Arène ».
+
 Les personnages sont fictifs. Ils s'inspirent de ces cultures sans prétendre en représenter fidèlement les codes.
 
 ## Jouer
@@ -27,6 +29,21 @@ Les personnages sont fictifs. Ils s'inspirent de ces cultures sans prétendre en
 | Pouvoir spécial (jauge pleine) | L | ○ ou R2 |
 | Pause | Échap ou P | Options |
 
+## Tests et mesures
+
+| Commande | Rôle |
+|---|---|
+| `npm start` | Sert le jeu sur `http://localhost:8000` |
+| `npm test` | 79 tests de la simulation (Node 20 ou plus, aucune dépendance) |
+| `npm run balance` | Rapport d'équilibrage IA contre IA |
+| `npm run soak` | Test d'endurance dans Chrome : matchs enchaînés, détection de fuites (Python et Playwright) |
+| `python3 tests/browser/smoke.py` | Parcours complet au clavier dans Chrome, 18 vérifications |
+
+En jeu, **F3** (ou `?perf=1` dans l'adresse) affiche les images par seconde, la durée des images,
+les ressources graphiques et la mémoire.
+
+Documentation : `CHANGELOG.md`, `docs/EQUILIBRAGE.md`, `docs/DIRECTION-ARTISTIQUE.md`, `docs/FEUILLE-DE-ROUTE.md`.
+
 ## Architecture
 
 ```
@@ -37,6 +54,8 @@ src/sim/          logique pure, sans rendu, testable dans Node
   characters.js   données des combattants (coups, frames, portées, spéciaux)
   ai.js           IA à trois niveaux de comportement
 src/render/       rendu Three.js : modèles low-poly, poses, arène, caméra, effets
+src/core/         boucle à pas fixe
+src/perf.js       mesures de performances
 src/input.js      clavier + API Gamepad
 src/audio.js      sons synthétisés (Web Audio)
 vendor/           Three.js r187 (licence MIT)
