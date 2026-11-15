@@ -209,8 +209,8 @@ def eyes(positions, radius=0.0172, iris=(60, 34, 18), name='eyes'):
     return ob
 
 
-def hand(p, s, name, tris=1400):
-    """Poing fermé autour d'une hampe (prise d'arme), avec doigts et pouce distincts."""
+def hand(p, s, name, tris=1400, pose='grip'):
+    """Main : poing fermé autour d'une hampe (pose='grip') ou main ouverte prête à saisir (pose='open')."""
     P = p.hand_frame(s)
     c = Clay()
     c.capsule(P(-0.035, 0.0, 0), P(0.02, 0.006, 0), 0.03, 0.028)                       # poignet
@@ -218,8 +218,15 @@ def hand(p, s, name, tris=1400):
     for i in range(4):
         z = -0.034 + i * 0.0225
         r = 0.0108 - abs(i - 1.2) * 0.0007
-        c.chain([(P(0.082, 0.014, z), r), (P(0.112, -0.012, z), r * 0.95), (P(0.102, -0.04, z), r * 0.88), (P(0.074, -0.043, z), r * 0.82)])
-    c.chain([(P(0.028, -0.004, -0.036), 0.0125), (P(0.06, -0.022, -0.05), 0.011), (P(0.088, -0.044, -0.047), 0.0098)])   # pouce
+        if pose == 'grip':
+            c.chain([(P(0.082, 0.014, z), r), (P(0.112, -0.012, z), r * 0.95), (P(0.102, -0.04, z), r * 0.88), (P(0.074, -0.043, z), r * 0.82)])
+        else:
+            ln = 0.036 - abs(i - 1.3) * 0.004
+            c.chain([(P(0.082, 0.014, z * 1.15), r), (P(0.082 + ln, 0.006, z * 1.3), r * 0.95), (P(0.082 + ln * 1.9, -0.012, z * 1.4), r * 0.88), (P(0.082 + ln * 2.5, -0.034, z * 1.45), r * 0.8)])
+    if pose == 'grip':
+        c.chain([(P(0.028, -0.004, -0.036), 0.0125), (P(0.06, -0.022, -0.05), 0.011), (P(0.088, -0.044, -0.047), 0.0098)])
+    else:
+        c.chain([(P(0.028, 0.0, -0.036), 0.0125), (P(0.05, -0.012, -0.066), 0.011), (P(0.078, -0.022, -0.082), 0.0098)])
     ob = c.to_object(name)
     fuse(ob, voxel=0.003, smooth=3, smooth_factor=0.5, tris=tris)
     return ob

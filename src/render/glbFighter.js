@@ -5,7 +5,11 @@ import { applyStylized } from './stylized.js';
 
 // Combattants modélisés (fichiers GLB produits par tools/art/). Un combattant sans fichier GLB
 // garde son ancien modèle construit par le code : le jeu fonctionne dans les deux cas.
-export const MODELS = { themba: 'assets/models/themba.glb' };
+export const MODELS = {
+  modou: { url: 'assets/models/modou.glb', scale: 1.0 },
+  themba: { url: 'assets/models/themba.glb', scale: 1.0 },
+  lekishon: { url: 'assets/models/lekishon.glb', scale: 1.05 },   // plus grand et plus élancé
+};
 
 // Les modèles sont au repos bras écartés (pose en A) ; les poses du jeu sont définies bras le long du corps.
 const ARM_ANGLE = THREE.MathUtils.degToRad(35);
@@ -14,7 +18,7 @@ const cache = new Map();      // id -> gltf chargé (géométries et textures pa
 export function preloadModels(ids = Object.keys(MODELS)) {
   const loader = new GLTFLoader();
   return Promise.all(ids.filter((id) => MODELS[id] && !cache.has(id)).map((id) =>
-    loader.loadAsync(MODELS[id]).then((g) => { cache.set(id, g); }).catch((e) => { console.warn(`Modèle ${id} indisponible, modèle de secours utilisé :`, e.message || e); })));
+    loader.loadAsync(MODELS[id].url).then((g) => { cache.set(id, g); }).catch((e) => { console.warn(`Modèle ${id} indisponible, modèle de secours utilisé :`, e.message || e); })));
 }
 export const hasModel = (id) => cache.has(id);
 
@@ -35,6 +39,7 @@ export class GlbRig {
   constructor(id) {
     const gltf = cache.get(id);
     this.root = cloneSkinned(gltf.scene);
+    this.scale = MODELS[id].scale || 1;
     const { materials } = applyStylized(this.root);
     this.materials = materials;                 // propres à cette instance : libérés par dispose()
     this.accents = [];

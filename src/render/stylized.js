@@ -4,7 +4,7 @@ import * as THREE from 'three';
 // l'arène) et on ajoute une lumière de contour chaude sur les bords, plus un liseré de silhouette.
 const RIM = { color: new THREE.Color('#ffb46a'), power: 2.6, strength: 0.55 };
 const OUTLINE = { color: '#1a0f0a', width: 0.0045 };
-const NO_OUTLINE = /perle|collier|bracelet|cheville|yeux|eyes|sourcil|paupiere|plume|amashoba|isinene/i;
+const NO_OUTLINE = /perle|collier|bracelet|brassard|cheville|bandeau|pendentif|boucle|yeux|eyes|sourcil|paupiere|plume|amashoba|isinene|tresses|cordon|grisgris/i;
 
 function rimPatch(material) {
   material.onBeforeCompile = (shader) => {
@@ -41,6 +41,9 @@ function getOutlineMaterial() {
 
 // Applique le style à un modèle chargé. Retourne { materials, outlines } :
 // les matériaux sont propres à cette instance (clonés), le matériau de liseré est partagé.
+// Matériaux de vêtement qu'une tenue alternative peut reteindre (jamais la peau ni le métal).
+export const CLOTH_MATERIALS = /pelage|tissu|shuka|peau_de_vache|cheveux/i;
+
 export function applyStylized(root, { outline = true, cloneMaterials = true } = {}) {
   const seen = new Map();
   const meshes = [];

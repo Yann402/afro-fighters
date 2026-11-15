@@ -222,6 +222,20 @@ class Surface:
         loc, normal, _, _ = self.tree.find_nearest(Vector(pt[:3]))
         return tuple(loc + normal * offset)
 
+    def radius(self, z, a, cy=0.0, far=0.9):
+        """Distance de l'axe vertical à la surface extérieure, dans la direction d'angle a (0 = devant)."""
+        d = Vector((math.sin(a), -math.cos(a), 0.0)); o = Vector((0, cy, z)) + d * far
+        loc, _, _, dist = self.tree.ray_cast(o, -d, far)
+        return far - dist if loc is not None else None
+
+    def profile(self, z, n, cy=0.0, widen=2, default=0.06, far=0.42):
+        """Contour extérieur à la hauteur z (n angles), arrondi pour envelopper les deux jambes d'un seul tenant."""
+        # far : on part de l'intérieur du cercle des bras (écartés en pose de repos) pour ne mesurer que le tronc et les jambes
+        r = [self.radius(z, 2 * math.pi * j / n, cy, far) for j in range(n)]
+        r = [x if x is not None else default for x in r]
+        hull = [max(r[(j + k) % n] * math.cos(2 * math.pi * k / n) ** 2 for k in range(-widen, widen + 1)) for j in range(n)]
+        return [(hull[(j - 1) % n] + 2 * hull[j] + hull[(j + 1) % n]) / 4 for j in range(n)]
+
     def snap_all(self, pts, offset=0.0):
         return [self.snap(q, offset) for q in pts]
 
@@ -315,6 +329,36 @@ def set_origin(obj, point):
     obj.location = pt
     bpy.context.view_layer.update()
     return obj
+
+
+def cloth(obj, body, arm):
+    """Vêtement souple : reprend les poids de peau du corps le plus proche, pour suivre les membres."""
+    _activate(obj)
+    m = obj.modifiers.new('poids', 'DATA_TRANSFER')
+    m.object = body; m.use_vert_data = True; m.data_types_verts = {'VGROUP_WEIGHTS'}; m.vert_mapping = 'POLYINTERP_NEAREST'
+    bpy.ops.object.datalayout_transfer(modifier=m.name)
+    bpy.ops.object.modifier_apply(modifier=m.name)
+    a = obj.modifiers.new('squelette', 'ARMATURE'); a.object = arm
+    obj.parent = arm
+    return obj
+
+
+def tube_shell(name, ring_fn, nu, nv, thickness):
+    """Coque refermée sur elle-même (jupe, pagne enroulé). ring_fn(u dans [0,1], angle) -> point ; l'angle 0 est devant."""
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.new('UVMap')
+    rows = [[bm.verts.new(ring_fn(i / nu, 2 * math.pi * j / nv)) for j in range(nv)] for i in range(nu + 1)]
+    for i in range(nu):
+        for j in range(nv):
+            f = bm.faces.new((rows[i][j], rows[i + 1][j], rows[i + 1][(j + 1) % nv], rows[i][(j + 1) % nv]))
+            for l, (uu, vv) in zip(f.loops, ((j / nv, i / nu), (j / nv, (i + 1) / nu), ((j + 1) / nv, (i + 1) / nu), ((j + 1) / nv, i / nu))): l[uv].uv = (uu, 1 - vv)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
+    ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob)
+    m = ob.modifiers.new('épaisseur', 'SOLIDIFY'); m.thickness = thickness; m.offset = 1
+    apply_modifier(ob, m)
+    shade_smooth(ob)
+    return ob
 
 
 def attach(obj, arm, bone):

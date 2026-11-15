@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { buildFighter } from './rig.js';
-import { KEYS, ZERO, targetPose, smoothingRate } from './poses.js';
+import { KEYS, ZERO, targetPose, smoothingRate, dampingRatio } from './poses.js';
 import { GlbRig, hasModel } from './glbFighter.js';
+import { CLOTH_MATERIALS } from './stylized.js';
 
 const YAW = Math.PI / 2 - 0.5; // vue de 3/4 vers la caméra
 const qA = new THREE.Quaternion();
@@ -18,6 +19,7 @@ export class FighterView {
     this.root.add(rig.root);
     scene.add(this.root);
     this.pose = { ...ZERO, ...targetPose({ char: { id: charId }, state: 'intro', t: 0 }, { time: 0, build: rig.build }) };
+    this.vel = { ...ZERO };
     this.time = 0;
     this.walkPhase = 0;
     this.build = rig.build;
@@ -72,10 +74,16 @@ export class FighterView {
 
     if (f.state === 'walk') this.walkPhase += dt * (f.char.id === 'lekishon' ? 11 : 9) * (f.walkDir || 1);
 
-    // pose cible + lissage exponentiel → transitions fluides
+    // pose cible, rejointe par un ressort amorti : léger dépassement puis retour, comme un vrai geste
+    // (l'ancien lissage exponentiel donnait des mouvements mous, sans élan ni rebond).
     const target = targetPose(f, this, match);
-    const k = 1 - Math.exp(-smoothingRate(f) * dt);
-    for (const key of KEYS) this.pose[key] += (target[key] - this.pose[key]) * k;
+    const omega = smoothingRate(f) * 1.25, zeta = dampingRatio(f);
+    const n = Math.max(1, Math.ceil(dt * omega / 0.45)), h = dt / n;
+    for (const key of KEYS) {
+      let x = this.pose[key], v = this.vel[key];
+      for (let i = 0; i < n; i++) { v += (omega * omega * (target[key] - x) - 2 * zeta * omega * v) * h; x += v * h; }
+      this.pose[key] = x; this.vel[key] = v;
+    }
     const p = this.pose;
 
     // orientation : miroir selon le côté, rotation de 3/4
@@ -86,7 +94,8 @@ export class FighterView {
     if (Math.abs(wantMirror - this.mirror) < 0.02) this.mirror = wantMirror;
     const sx = Math.sign(this.mirror) * Math.max(0.08, Math.abs(this.mirror));
     this.root.position.set(x, y, 0);
-    this.rig.root.scale.x = sx;
+    const sc = this.glb ? this.glb.scale : 1;
+    this.rig.root.scale.set(sx * sc, sc, sc);
     this.rig.root.rotation.y = Math.sign(this.mirror || 1) * YAW;
 
     if (this.glb) { this.glb.applyPose(p, extraFall); this.updateGlow(f, dt); return; }
@@ -131,6 +140,12 @@ export class FighterView {
       m.emissive.setRGB(e + gl * 1.0, e + gl * 0.6, e + gl * 0.15);
     }
     for (const m of this.rig.accents) if (m.emissive) m.emissive.setRGB(0.4 * this.glow + this.flash, 0.25 * this.glow + this.flash, 0.05 * this.glow + this.flash);
+  }
+
+  // Tenue alternative : reteint les matériaux de vêtement (sans effet sur le jeu lui-même).
+  setOutfit(tint) {
+    if (!this.glb) return;
+    for (const m of this.materials) if (CLOTH_MATERIALS.test(m.name)) m.color.set(tint || '#ffffff');
   }
 
   // Copie figée pour les images rémanentes (un maillage à squelette doit être dupliqué avec ses os).
