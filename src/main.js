@@ -11,6 +11,7 @@ import { Input } from './input.js';
 import { Audio } from './audio.js';
 import { FixedStep } from './core/fixedStep.js';
 import { Perf } from './perf.js';
+import { preloadModels } from './render/glbFighter.js';
 
 // ───────────────────────────── Rendu
 const canvas = document.getElementById('c');
@@ -556,11 +557,12 @@ setState('title');
 camRig.mode = 'select';
 camRig.update(0.016, { x: 0, y: 0 }, { x: 0, y: 0 });
 camRig.snap();
-requestAnimationFrame((t) => { last = t; $('loading').classList.add('gone'); frame(t); });
+// Les modèles 3D sont chargés avant le premier affichage ; en cas d'échec, l'ancien modèle sert de secours.
+preloadModels().finally(() => requestAnimationFrame((t) => { last = t; $('loading').classList.add('gone'); frame(t); }));
 
 // Mesures de performances : F3 ou ?perf=1
 window.addEventListener('keydown', (e) => { if (e.code === 'F3') { e.preventDefault(); perf.toggle(); } });
 if (new URLSearchParams(location.search).has('perf')) perf.toggle(true);
 
 // Interface de test et de diagnostic (utilisée par tests/browser/). Sans effet sur le jeu.
-window.__afro = { S, perf, loop, debug, fx, scene, camera, renderer, startMatch, goSelect, setState, menuAction, AIController, CHARACTERS, ROSTER };
+window.__afro = { FighterView, S, perf, loop, debug, fx, scene, camera, renderer, startMatch, goSelect, setState, menuAction, AIController, CHARACTERS, ROSTER };

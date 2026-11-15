@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildFighter } from './rig.js';
 import { KEYS, ZERO, targetPose, smoothingRate } from './poses.js';
+import { GlbRig, hasModel } from './glbFighter.js';
 
 const YAW = Math.PI / 2 - 0.5; // vue de 3/4 vers la caméra
 const qA = new THREE.Quaternion();
@@ -9,7 +10,9 @@ const qB = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.15, -0.35, 0));
 export class FighterView {
   constructor(charId, scene) {
     this.charId = charId;
-    const rig = buildFighter(charId);
+    // modèle GLB s'il est chargé, sinon ancien modèle construit par le code
+    this.glb = hasModel(charId) ? new GlbRig(charId) : null;
+    const rig = this.glb || buildFighter(charId);
     this.rig = rig;
     this.root = new THREE.Group();
     this.root.add(rig.root);
@@ -24,10 +27,11 @@ export class FighterView {
     this.yaw = YAW;
     this.mirror = 1;
     this.initMirror = true;
-    this.hipBase = rig.J.hips.position.y;
+    this.hipBase = this.glb ? 0 : rig.J.hips.position.y;
     // contour léger (silhouette) pour lisibilité
     this.materials = [];
-    rig.root.traverse((o) => { if (o.isMesh && !this.materials.includes(o.material)) this.materials.push(o.material); });
+    if (this.glb) this.materials = this.glb.materials;
+    else rig.root.traverse((o) => { if (o.isMesh && !this.materials.includes(o.material)) this.materials.push(o.material); });
   }
 
   // Propriété des ressources : chaque combattant possède ses géométries et ses matériaux
@@ -36,6 +40,9 @@ export class FighterView {
   // Les images rémanentes (fx.js) réutilisent ces géométries : appeler fx.clear() avant dispose().
   dispose(scene) {
     scene.remove(this.root);
+    this.disposed = true;
+    // modèle GLB : géométries et textures appartiennent au cache de chargement, partagé entre instances
+    if (this.glb) { this.glb.dispose(); return; }
     const geos = new Set();
     this.rig.root.traverse((o) => { if (o.isMesh) geos.add(o.geometry); });
     for (const g of geos) g.dispose();
@@ -82,6 +89,7 @@ export class FighterView {
     this.rig.root.scale.x = sx;
     this.rig.root.rotation.y = Math.sign(this.mirror || 1) * YAW;
 
+    if (this.glb) { this.glb.applyPose(p, extraFall); this.updateGlow(f, dt); return; }
     const J = this.rig.J;
     J.hips.position.y = this.hipBase + p.rootY;
     J.hips.rotation.set(p.fall + extraFall, p.turn, 0);
@@ -107,7 +115,11 @@ export class FighterView {
       shield.quaternion.copy(qA).multiply(qB);
     }
 
-    // éclat lors d'un coup reçu / aura du spécial
+    this.updateGlow(f, dt);
+  }
+
+  // éclat lors d'un coup reçu / aura du spécial
+  updateGlow(f, dt) {
     this.flash = Math.max(0, this.flash - dt * 6);
     const special = f.state === 'attack' && f.move?.special;
     this.glow += ((special ? 1 : f.meter >= 100 ? 0.35 : 0) - this.glow) * Math.min(1, dt * 8);
@@ -121,10 +133,14 @@ export class FighterView {
     for (const m of this.rig.accents) if (m.emissive) m.emissive.setRGB(0.4 * this.glow + this.flash, 0.25 * this.glow + this.flash, 0.05 * this.glow + this.flash);
   }
 
-  // Positions monde utiles aux effets (pointe d'arme, mains)
-  worldPoint(name, out = new THREE.Vector3()) {
-    const J = this.rig.J;
-    const obj = name === 'blade' ? this.rig.weapons.spearBlade || J.handR : J[name] || J.spine;
-    return obj.getWorldPosition(out);
+  // Copie figée pour les images rémanentes (un maillage à squelette doit être dupliqué avec ses os).
+  snapshot() {
+    if (!this.glb) return this.root.clone(true);
+    const g = new THREE.Group();
+    g.position.copy(this.root.position);
+    const c = this.glb.snapshot();
+    c.traverse((o) => { if (o.userData.isOutline) o.visible = false; });
+    g.add(c);
+    return g;
   }
 }

@@ -4,6 +4,9 @@ import { softDotTex } from './textures.js';
 // Système d'effets : particules (étincelles, poussière, aura), ondes de choc, images rémanentes.
 const MAX = 1400;
 
+// Une image rémanente d'un modèle à squelette possède sa propre copie des os (et leur texture).
+function freeSkeletons(obj) { obj.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); }); }
+
 export class FX {
   constructor(scene) {
     this.scene = scene;
@@ -74,7 +77,7 @@ export class FX {
 
   // Image rémanente : copie figée du combattant qui s'estompe
   afterimage(view, blue = false, offset = null, life = 0.3, opacity = null) {
-    const clone = view.root.clone(true);
+    const clone = view.snapshot();
     const mat = (blue ? this.ghostMatBlue : this.ghostMat).clone();
     if (opacity != null) mat.opacity = opacity;
     clone.traverse((o) => { if (o.isMesh) { o.material = mat; o.castShadow = false; } });
@@ -148,7 +151,7 @@ export class FX {
     this.ghosts = this.ghosts.filter((g) => {
       g.age += dt;
       const p = g.age / g.life;
-      if (p >= 1) { this.scene.remove(g.obj); g.mat.dispose(); return false; }
+      if (p >= 1) { this.scene.remove(g.obj); g.mat.dispose(); freeSkeletons(g.obj); return false; }
       g.mat.opacity = g.base * (1 - p);
       return true;
     });
@@ -160,7 +163,7 @@ export class FX {
   clear() {
     for (const L of [this.glowLayer, this.dustLayer]) { L.list.length = 0; L.geo.setDrawRange(0, 0); }
     for (const r of this.rings) { this.scene.remove(r.mesh); r.mesh.material.dispose(); }
-    for (const g of this.ghosts) { this.scene.remove(g.obj); g.mat.dispose(); }
+    for (const g of this.ghosts) { this.scene.remove(g.obj); g.mat.dispose(); freeSkeletons(g.obj); }
     this.rings = []; this.ghosts = [];
   }
 
