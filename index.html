@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Légendes de l'Arène — Bêta</title>
+  <meta name="description" content="Jeu de combat 3D inspiré des cultures africaines — bêta jouable dans le navigateur." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2230%22 fill=%22%23c99a62%22/%3E%3Cpath d=%22M32 6 L38 40 L32 58 L26 40Z%22 fill=%22%23120b08%22/%3E%3C/svg%3E" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="c"></canvas>
+    <div id="vignette"></div>
+    <div id="flash"></div>
+
+    <!-- HUD de combat -->
+    <div id="hud" class="hidden">
+      <div class="topbar">
+        <div class="side p1">
+          <div class="nameRow"><span class="name" id="n0"></span><span class="rounds" id="r0"></span></div>
+          <div class="hp"><div class="trail" id="t0"></div><div class="fill" id="h0"></div></div>
+          <div class="meter" id="mw0"><div class="mfill" id="m0"></div><span>SPÉCIAL</span></div>
+        </div>
+        <div class="timer" id="timer">60</div>
+        <div class="side p2">
+          <div class="nameRow"><span class="rounds" id="r1"></span><span class="name" id="n1"></span></div>
+          <div class="hp"><div class="trail" id="t1"></div><div class="fill" id="h1"></div></div>
+          <div class="meter" id="mw1"><div class="mfill" id="m1"></div><span>SPÉCIAL</span></div>
+        </div>
+      </div>
+      <div class="combo left" id="c0"></div>
+      <div class="combo right" id="c1"></div>
+      <div id="banner"></div>
+      <div id="specialBanner"></div>
+      <div class="hint" id="fightHint"></div>
+    </div>
+
+    <!-- Écran titre -->
+    <section class="screen" id="screen-title">
+      <div class="titleBox">
+        <div class="kicker">Bêta jouable</div>
+        <h1>LÉGENDES<br/><span>DE L'ARÈNE</span></h1>
+        <p class="tag">Trois guerriers. Trois traditions. Une seule arène.</p>
+        <div class="menu vertical">
+          <button class="opt" data-act="play">Combattre</button>
+          <button class="opt" data-act="controls">Commandes</button>
+        </div>
+        <p class="press">Entrée / ✕ pour valider · flèches pour naviguer</p>
+      </div>
+    </section>
+
+    <!-- Commandes -->
+    <section class="screen" id="screen-controls">
+      <div class="panel controls">
+        <h2>Commandes</h2>
+        <table>
+          <thead><tr><th>Action</th><th>Clavier</th><th>Manette PS4 / PS5</th></tr></thead>
+          <tbody>
+            <tr><td>Se déplacer</td><td>Q / D (AZERTY) · A / D (QWERTY) · ← →</td><td>Croix ou stick gauche</td></tr>
+            <tr><td>Sauter</td><td>Z (AZERTY) · W (QWERTY) · ↑ · Espace</td><td>✕ ou haut</td></tr>
+            <tr><td>Garde</td><td>S · ↓ · Maj — ou reculer</td><td>L1 / R1 — ou reculer</td></tr>
+            <tr><td>Coup léger</td><td>J</td><td>□</td></tr>
+            <tr><td>Coup lourd</td><td>K</td><td>△</td></tr>
+            <tr><td>Projection</td><td>Avancer + K (au contact)</td><td>Avancer + △</td></tr>
+            <tr><td>Pouvoir spécial</td><td>L (jauge pleine)</td><td>○ ou R2</td></tr>
+            <tr><td>Pause</td><td>Échap · P</td><td>Options</td></tr>
+          </tbody>
+        </table>
+        <p class="tips">Astuces : léger → lourd s'enchaîne si le premier coup touche. La garde bloque les coups mais pas les projections. Un coup lourd ou léger qui touche peut être annulé dans le pouvoir spécial.</p>
+        <div class="menu"><button class="opt" data-act="back">Retour</button></div>
+      </div>
+    </section>
+
+    <!-- Sélection du combattant -->
+    <section class="screen" id="screen-select">
+      <div class="selectTop">
+        <h2>Choisis ton combattant</h2>
+      </div>
+      <div class="charInfo" id="charInfo"></div>
+      <div class="menu cards" id="cards"></div>
+      <p class="press bottom">← → choisir · Entrée / ✕ valider · Échap / ○ retour</p>
+    </section>
+
+    <!-- Difficulté -->
+    <section class="screen" id="screen-diff">
+      <div class="panel">
+        <h2>Niveau de l'adversaire</h2>
+        <div class="menu vertical diffs">
+          <button class="opt" data-diff="facile"><b>Facile</b><small>Réagit lentement, garde rarement, attaque au hasard.</small></button>
+          <button class="opt" data-diff="normal"><b>Normal</b><small>Gère la distance, garde une fois sur deux, punit parfois.</small></button>
+          <button class="opt" data-diff="difficile"><b>Difficile</b><small>Punit chaque erreur, contre les sauts, projette ceux qui gardent trop.</small></button>
+        </div>
+        <p class="press">Échap / ○ retour</p>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section class="screen dim" id="screen-pause">
+      <div class="panel">
+        <h2>Pause</h2>
+        <div class="menu vertical">
+          <button class="opt" data-act="resume">Reprendre</button>
+          <button class="opt" data-act="restart">Recommencer le combat</button>
+          <button class="opt" data-act="select">Changer de combattant</button>
+          <button class="opt" data-act="sound">Son : activé</button>
+          <button class="opt" data-act="controls">Commandes</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Résultat -->
+    <section class="screen dim" id="screen-result">
+      <div class="panel result">
+        <div class="resultTitle" id="resultTitle">VICTOIRE</div>
+        <p id="resultText"></p>
+        <div class="menu vertical">
+          <button class="opt" data-act="rematch">Revanche</button>
+          <button class="opt" data-act="select">Changer de combattant</button>
+          <button class="opt" data-act="title">Écran titre</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast"></div>
+    <div id="loading">Chargement de l'arène…</div>
+    <noscript>Ce jeu nécessite JavaScript.</noscript>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
