@@ -45,11 +45,12 @@ for (const a of ROSTER) for (const b of ROSTER) {
   test(`${a} → ${b} : la garde bloque les coups, pas les projections`, () => {
     const hold = () => input(['guard']);
     const m1 = duel(a, b, contact(a, b));
+    for (let i = 0; i < 12; i++) m1.step([noInput(), hold()]);   // garde levée depuis longtemps : pas un contre
     const e1 = run(m1, 30, input([], ['light']), hold);
     assert.ok(e1.some((e) => e.type === 'block'), 'le coup léger devrait être bloqué');
     assert.ok(!e1.some((e) => e.type === 'hit'));
     const m2 = duel(a, b, contact(a, b));
-    for (let i = 0; i < 3; i++) m2.step([noInput(), hold()]);
+    for (let i = 0; i < 12; i++) m2.step([noInput(), hold()]);
     const e2 = run(m2, 90, input(['right'], ['heavy']), hold);
     assert.ok(e2.some((e) => e.type === 'grab'), 'la projection devrait passer la garde');
     assert.ok(e2.some((e) => e.type === 'slam'), 'la projection devrait aller à son terme');
@@ -140,6 +141,7 @@ test('Adumu : invulnérable pendant les deux premiers bonds, interruptible penda
 test('la garde ne peut pas mettre K.O. (dégâts d’usure plafonnés à 1 PV)', () => {
   const m = duel('lekishon', 'modou', 1.2);
   m.fighters[1].hp = 3;
+  for (let i = 0; i < 12; i++) m.step([noInput(), input(['guard'])]);
   run(m, 40, input([], ['heavy']), () => input(['guard']));
   assert.equal(m.fighters[1].hp, 1);
 });

@@ -33,6 +33,8 @@ export function monkey(seed, style = 'mixed') {
     const p = style === 'masher' ? 0.25 : 0.1;
     if (r() < p) pressed.light = true;
     if (r() < p) pressed.heavy = true;
+    if (r() < p) pressed.medium = true;
+    if (r() < p * 0.5) pressed.dash = true;
     if (r() < p * 0.6) pressed.special = true;
     if (r() < p * 0.4) pressed.up = true;
     return { held: { ...held, ...pressed }, pressed };

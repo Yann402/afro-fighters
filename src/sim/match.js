@@ -2,6 +2,7 @@ import { Fighter } from './fighter.js';
 import { CHARACTERS } from './characters.js';
 import {
   STAGE_HALF, MAX_SEPARATION, METER_MAX, ROUND_TIME, ROUNDS_TO_WIN, HURT_HALF_WIDTH, FPS,
+  GUARD_MAX, PARRIED_FRAMES,
 } from './constants.js';
 
 const HURT_HEIGHT = 1.75;
@@ -9,7 +10,10 @@ const HISTORY = 40;
 
 // Une partie complète : manches, chrono, résolution des coups, événements pour le rendu/audio/UI.
 export class Match {
-  constructor(p1Id, p2Id) {
+  // options.training : pas de chrono ni de K.O., la vie remonte entre deux enchaînements
+  // options.infiniteMeter : jauge de pouvoir toujours pleine (entraînement)
+  constructor(p1Id, p2Id, options = {}) {
+    this.options = { training: false, infiniteMeter: false, ...options };
     this.fighters = [new Fighter(CHARACTERS[p1Id], 0), new Fighter(CHARACTERS[p2Id], 1)];
     this.events = [];
     this.frame = 0;
@@ -46,7 +50,7 @@ export class Match {
   snap(f) {
     return {
       x: f.x, y: f.y, state: f.state, phase: f.phase, move: f.move, serial: f.moveSerial,
-      airborne: f.y > 0.02, blocking: f.blocking, guardFrames: f.guardFrames, mf: f.mf,
+      airborne: f.y > 0.02, blocking: f.blocking, guardFrames: f.guardFrames, mf: f.mf, guardHp: f.guardHp, t: f.t,
       facing: f.facing, vx: f.vx, char: f.char,
     };
   }
@@ -95,7 +99,13 @@ export class Match {
     }
     this.releaseOrphans(a, b);
 
-    if (this.phase === 'fight') {
+    if (this.phase === 'fight' && this.options.training) {
+      for (const f of this.fighters) {
+        if (f.hp < 1) f.hp = 1;
+        if (this.frame - f.lastHitFrame > 110 && f.hp < f.maxHp && f.state !== 'hitstun' && f.state !== 'launched') f.hp = f.maxHp;
+        if (this.options.infiniteMeter && f.free) f.meter = METER_MAX;
+      }
+    } else if (this.phase === 'fight') {
       this.timerFrames++;
       if (this.timerFrames >= FPS) { this.timerFrames = 0; this.timer--; }
       const koA = a.hp <= 0, koB = b.hp <= 0;
@@ -127,6 +137,55 @@ export class Match {
         f.throwData = null; f.move = null; f.setState('idle');
       }
     }
+  }
+
+  // ── État complet du match, copiable et restaurable.
+  // Prérequis du jeu en ligne par retour en arrière (rollback) : on doit pouvoir revenir quelques
+  // frames en arrière et rejouer avec les entrées corrigées. Les événements en attente ne sont pas sauvés.
+  saveState() {
+    const fighter = (f) => {
+      const o = {};
+      for (const k of Object.keys(f)) {
+        const v = f[k];
+        if (k === 'char') o.char = v.id;
+        else if (k === 'move') o.move = v ? v.id : null;
+        else if (k === 'throwData') o.throwData = v ? v.move.id : null;
+        else if (k === 'moveHits') o.moveHits = [...v];
+        else if (k === 'buffer') o.buffer = { ...v };
+        else if (v === null || typeof v !== 'object') o[k] = v;
+      }
+      return o;
+    };
+    const m = {};
+    for (const k of Object.keys(this)) { const v = this[k]; if (v === null || typeof v !== 'object') m[k] = v; }
+    return {
+      match: m, options: { ...this.options }, result: this.result ? { ...this.result } : null,
+      fighters: this.fighters.map(fighter),
+      history: this.history.map((h) => h.map((sn) => ({ ...sn, move: sn.move ? sn.move.id : null, char: sn.char.id }))),
+    };
+  }
+
+  loadState(st) {
+    Object.assign(this, st.match);
+    this.options = { ...st.options }; this.result = st.result ? { ...st.result } : null;
+    this.events = [];
+    st.fighters.forEach((o, i) => {
+      const f = this.fighters[i];
+      const char = CHARACTERS[o.char];
+      const moveOf = (id) => (id ? Object.values(char.moves).find((mv) => mv.id === id) : null);
+      for (const k of Object.keys(o)) {
+        if (k === 'char') f.char = char;
+        else if (k === 'move') f.move = moveOf(o.move);
+        else if (k === 'throwData') { const mv = moveOf(o.throwData); f.throwData = mv ? { anim: mv.throwAnim, move: mv } : null; }
+        else if (k === 'moveHits') f.moveHits = new Set(o.moveHits);
+        else if (k === 'buffer') f.buffer = { ...o.buffer };
+        else f[k] = o[k];
+      }
+    });
+    this.history = st.history.map((h) => h.map((sn) => {
+      const char = CHARACTERS[sn.char];
+      return { ...sn, char, move: sn.move ? Object.values(char.moves).find((mv) => mv.id === sn.move) : null };
+    }));
   }
 
   clampX(x) { return Math.max(-STAGE_HALF, Math.min(STAGE_HALF, x)); }
@@ -247,15 +306,38 @@ export class Match {
     const hx = def.x - att.facing * 0.25;
 
     if (blocked) {
+      // Contre : garde levée juste avant l'impact. L'attaquant est déséquilibré, le défenseur reprend la main.
+      if (!move.special && def.state === 'guard' && this.frame <= def.parryUntil) {
+        def.parryUntil = -99;
+        def.meter = Math.min(METER_MAX, def.meter + 12);
+        def.guardHp = Math.min(GUARD_MAX, def.guardHp + 20);
+        att.move = null;
+        if (att.y > 0.05) { att.setState('launched'); att.vy = 0.09; att.vx = -att.facing * 0.07; }
+        else { att.setState('parried'); att.stun = PARRIED_FRAMES; att.vx = -att.facing * 0.06; }
+        this.hitstop = 11;
+        this.emit({ type: 'parry', x: hx, y: midY, f: def.index, by: att.index });
+        return;
+      }
       // le bouclier réduit de moitié les dégâts d'usure (il ne les annule plus : la garde était sans risque)
       const chip = Math.round(h.damage * h.chip * (def.char.shieldGuard ? 0.5 : 1));
       def.hp = Math.max(1, def.hp - chip); // le blocage ne peut pas achever
-      def.stun = Math.max(4, h.blockstun - (def.char.shieldGuard ? 2 : 0));
-      def.move = null;
-      def.setState('blockstun');
-      def.vx = att.facing * (h.push * 0.9);
+      def.lastHitFrame = this.frame;
       att.meter = Math.min(METER_MAX, att.meter + h.damage * 0.05);
       def.meter = Math.min(METER_MAX, def.meter + h.damage * 0.06);
+      def.move = null;
+      // jauge de garde : trop de coups bloqués et la garde cède
+      def.guardHp -= h.damage * (def.char.shieldGuard ? 0.3 : 0.45) * (move.special ? 0.6 : 1);
+      if (def.guardHp <= 0) {
+        def.guardHp = 0;
+        def.setState('dizzy');
+        def.vx = att.facing * 0.05;
+        this.hitstop = 13;
+        this.emit({ type: 'guardBreak', x: hx, y: midY, f: def.index, by: att.index });
+        return;
+      }
+      def.stun = Math.max(4, h.blockstun - (def.char.shieldGuard ? 2 : 0));
+      def.setState('blockstun');
+      def.vx = att.facing * (h.push * 0.9);
       this.hitstop = 5;
       this.emit({ type: 'block', x: hx, y: midY, f: def.index, shield: !!def.char.shieldGuard, heavy: h.damage > 80 });
       this.wallPush(att, def, h.push * 0.9);
@@ -266,13 +348,15 @@ export class Match {
     if (def.armored) {
       const dmg = Math.round(h.damage * 0.5 * (def.char.defense || 1));
       def.hp = Math.max(0, def.hp - dmg);
+      def.lastHitFrame = this.frame;
       this.hitstop = 7;
       this.emit({ type: 'armor', x: hx, y: midY, f: def.index, dmg });
-      if (def.hp <= 0) this.koFighter(def, att.facing);
+      if (def.hp <= 0 && !this.options.training) this.koFighter(def, att.facing);
       return;
     }
 
     def.combo = def.state === 'hitstun' || def.state === 'launched' ? def.combo + 1 : 1;
+    def.lastHitFrame = this.frame;
     const scale = Math.max(0.45, 1 - 0.12 * (def.combo - 1));
     const dmg = Math.max(1, Math.round(h.damage * scale * (def.char.defense || 1)));
     def.hp = Math.max(0, def.hp - dmg);
@@ -285,9 +369,14 @@ export class Match {
     const heavy = dmg >= 80 || h.knockdown;
     this.emit({ type: 'hit', x: hx, y: midY, f: def.index, by: att.index, dmg, heavy, combo: def.combo, special: !!move.special, char: att.char.id, moveId: move.id, air: def.y > 0.05, attAir: att.y > 0.05, jumping: def.state === 'air' || def.state === 'airattack' });
 
-    if (def.hp <= 0) { this.koFighter(def, att.facing); return; }
+    if (def.hp <= 0 && !this.options.training) {
+      if (move.special) this.emit({ type: 'finisher', by: att.index, f: def.index, char: att.char.id });
+      this.koFighter(def, att.facing); return;
+    }
 
     if (h.knockdown || def.y > 0.05) {
+      // jongle limitée : au-delà de 3 coups sur un adversaire en l'air, il retombe hors d'atteinte
+      def.juggleLocked = (def.state === 'launched' && def.combo >= 4);
       def.setState('launched');
       def.vy = h.launch;
       def.y = Math.max(def.y, 0.01);
@@ -326,13 +415,17 @@ export class Match {
     def.combo = 1;
     const dmg = Math.round(anim.damage * (def.char.defense || 1));
     def.hp = Math.max(0, def.hp - dmg);
+    def.lastHitFrame = this.frame;
     att.meter = Math.min(METER_MAX, att.meter + (att.throwData.move.special ? 0 : dmg * 0.1));
     def.meter = Math.min(METER_MAX, def.meter + dmg * 0.08);
     def.x = this.clampX(att.x + att.facing * 1.0);
     def.y = 0;
     this.hitstop = anim.fx === 'bigSlam' ? 16 : 9;
     this.emit({ type: 'slam', x: def.x, y: 0.2, f: def.index, by: att.index, dmg, big: anim.fx === 'bigSlam', char: att.char.id });
-    if (def.hp <= 0) { this.koFighter(def, att.facing); def.vy = 0.08; return; }
+    if (def.hp <= 0 && !this.options.training) {
+      if (att.throwData.move.special) this.emit({ type: 'finisher', by: att.index, f: def.index, char: att.char.id });
+      this.koFighter(def, att.facing); def.vy = 0.08; return;
+    }
     def.setState('down');
     def.vx = att.facing * 0.04;
   }

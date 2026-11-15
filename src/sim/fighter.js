@@ -1,5 +1,6 @@
 import {
   GRAVITY, FRICTION, METER_MAX, INPUT_BUFFER, LAND_FRAMES, DOWN_FRAMES, GETUP_FRAMES, JUMPSQUAT,
+  GUARD_MAX, GUARD_REGEN_DELAY, GUARD_REGEN, PARRY_WINDOW, PARRY_LOCKOUT, DIZZY_FRAMES,
 } from './constants.js';
 
 const FREE_STATES = new Set(['idle', 'walk', 'guard']);
@@ -26,11 +27,15 @@ export class Fighter {
     this.airAttackUsed = false;
     this.combo = 0;
     this.walkDir = 0;
-    this.buffer = { light: -99, heavy: -99, special: -99, up: -99 };
+    this.buffer = { light: -99, medium: -99, heavy: -99, special: -99, up: -99, dash: -99 };
+    this.guardHp = GUARD_MAX; this.guardIdle = 0;
+    this.parryUntil = -99; this.lastGuardPress = -99;
+    this.dashDir = 0; this.lastHitFrame = -999;
     this.fwdHeld = false; this.backHeld = false; this.guardHeld = false;
     this.throwData = null;
     this.lastCue = null;
     this.guardFrames = 0;
+    this.juggleLocked = false;
   }
 
   get grounded() { return this.y <= 0.0001; }
@@ -45,7 +50,10 @@ export class Fighter {
   }
 
   get invulnerable() {
-    if (['down', 'getup', 'launched', 'thrown', 'throwing', 'ko', 'intro', 'win'].includes(this.state)) return true;
+    if (['down', 'getup', 'thrown', 'throwing', 'ko', 'intro', 'win'].includes(this.state)) return true;
+    if (this.state === 'launched' && this.juggleLocked) return true;
+    // esquive arrière : invulnérable pendant le cœur du mouvement
+    if (this.state === 'dash' && this.dashDir < 0 && this.t >= 2 && this.t <= this.char.dash.backInvuln) return true;
     const m = this.move;
     if (this.state === 'attack' && m && m.invuln && this.mf >= m.invuln[0] && this.mf <= m.invuln[1]) return true;
     return false;
@@ -68,10 +76,11 @@ export class Fighter {
   setState(s) { this.state = s; this.t = 0; }
 
   readInput(inp, frame) {
-    for (const k of ['light', 'heavy', 'special', 'up']) if (inp.pressed[k]) this.buffer[k] = frame;
+    for (const k of ['light', 'medium', 'heavy', 'special', 'up', 'dash']) if (inp.pressed[k]) this.buffer[k] = frame;
     this.fwdHeld = this.facing > 0 ? !!inp.held.right : !!inp.held.left;
     this.backHeld = this.facing > 0 ? !!inp.held.left : !!inp.held.right;
     this.guardHeld = !!inp.held.guard;
+    this.noParry = !!inp.held.noParry;   // l'IA lève parfois la garde sans tenter de contre
     this.upHeld = !!inp.held.up;
   }
 
@@ -89,11 +98,11 @@ export class Fighter {
       this.meter = 0;
       match.emit({ type: 'special', f: this.index, name: move.name, char: this.char.id });
     }
-    match.emit({ type: 'whoosh', f: this.index, heavy: move.id === 'heavy' || move.special });
+    match.emit({ type: 'whoosh', f: this.index, heavy: move.id === 'heavy' || move.special, moveId: move.id });
     this.setState(move.id === 'air' ? 'airattack' : 'attack');
   }
 
-  tryGroundAction(opp, match) {
+  tryGroundAction(opp, match, attacksOnly = false) {
     const fr = match.frame;
     const c = this.char;
     const dist = Math.abs(opp.x - this.x);
@@ -105,7 +114,16 @@ export class Fighter {
       const useThrow = this.fwdHeld && dist < c.throwRange + 0.15;
       this.startMove(useThrow ? c.moves.throw : c.moves.heavy, match); return true;
     }
+    if (this.buffered('medium', fr)) { this.consume('medium'); this.startMove(c.moves.medium, match); return true; }
     if (this.buffered('light', fr)) { this.consume('light'); this.startMove(c.moves.light, match); return true; }
+    if (attacksOnly) return false;
+    if (this.buffered('dash', fr)) {
+      this.consume('dash');
+      this.dashDir = this.backHeld ? -1 : 1;
+      this.setState('dash');
+      match.emit({ type: 'dash', f: this.index, dir: this.dashDir, x: this.x });
+      return true;
+    }
     if (this.buffered('up', fr) || this.upHeld) { this.consume('up'); this.setState('jumpsquat'); return true; }
     return false;
   }
@@ -114,6 +132,9 @@ export class Fighter {
     this.t++;
     const c = this.char;
     const fr = match.frame;
+    // la jauge de garde remonte quand on ne bloque plus
+    if (this.state === 'guard' || this.state === 'blockstun') this.guardIdle = 0;
+    else if (++this.guardIdle > GUARD_REGEN_DELAY && this.guardHp < GUARD_MAX) this.guardHp = Math.min(GUARD_MAX, this.guardHp + GUARD_REGEN);
 
     switch (this.state) {
       case 'intro': case 'win': case 'ko': case 'lose':
@@ -125,6 +146,11 @@ export class Fighter {
         if (!match.fighting) { this.setStateIf('idle'); this.vx *= FRICTION; break; }
         if (this.tryGroundAction(opp, match)) break;
         if (this.guardHeld) {
+          if (this.state !== 'guard') {
+            // lever la garde ouvre une courte fenêtre de contre (pas en martelant la touche)
+            if (fr - this.lastGuardPress > PARRY_LOCKOUT && !this.noParry) this.parryUntil = fr + PARRY_WINDOW;
+            this.lastGuardPress = fr;
+          }
           this.setStateIf('guard'); this.guardFrames++;
           this.walkDir = 0; this.vx *= FRICTION; break;
         }
@@ -184,6 +210,28 @@ export class Fighter {
 
       case 'airattack':
         this.mf++;
+        break;
+
+      case 'dash': {
+        const d = c.dash;
+        const fwd = this.dashDir > 0;
+        const len = fwd ? d.frames : d.backFrames;
+        const move = this.t <= len - 4;
+        if (move) this.x += this.facing * this.dashDir * (fwd ? d.speed : d.backSpeed);
+        // la ruée avant peut être enchaînée sur une attaque
+        if (fwd && this.t >= 6 && match.fighting && this.tryGroundAction(opp, match, true)) break;
+        if (this.t >= len) this.setState('idle');
+        break;
+      }
+
+      case 'parried':
+        this.stun--; this.vx *= 0.88;
+        if (this.stun <= 0) { this.combo = 0; this.setState('idle'); }
+        break;
+
+      case 'dizzy':
+        this.vx *= 0.85;
+        if (this.t >= DIZZY_FRAMES) { this.combo = 0; this.guardHp = GUARD_MAX; this.setState('idle'); }
         break;
 
       case 'hitstun':
@@ -246,7 +294,7 @@ export class Fighter {
 
   onLand(match) {
     match.emit({ type: 'land', f: this.index, x: this.x, hard: this.state === 'launched' || this.state === 'ko' });
-    if (this.state === 'launched') { this.vx *= 0.4; this.setState('down'); return; }
+    if (this.state === 'launched') { this.vx *= 0.4; this.juggleLocked = false; this.setState('down'); return; }
     if (this.state === 'ko') { this.vx *= 0.3; return; }
     if (this.state === 'hitstun') { return; }
     this.move = null;

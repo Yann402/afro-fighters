@@ -23,10 +23,18 @@ export const CHARACTERS = {
     pushWidth: 0.44,
     idealRange: 0.9,
     throwRange: 1.15,
+    dash: { frames: 15, speed: 0.1, backFrames: 18, backSpeed: 0.06, backInvuln: 8 },
     moves: {
       light: {
-        id: 'light', name: 'Claque du lutteur', total: 19, cancels: ['heavy', 'special'],
+        id: 'light', name: 'Claque du lutteur', total: 19, cancels: ['medium'],
         hits: [hit({ start: 6, end: 8, reach: [0.15, 1.15], damage: 56, hitstun: 18, blockstun: 12, push: 0.05 })],
+      },
+      medium: {
+        id: 'medium', name: "Coup d'épaule", total: 32, cancels: [],
+        advance: 0.5,
+        armor: [2, 9],     // encaisse un coup pendant l'élan : c'est l'outil d'approche du lutteur
+        motion(f, fr) { f.vx = fr >= 4 && fr <= 12 ? f.facing * (this.advance / 9) : f.vx * 0.6; },
+        hits: [hit({ start: 10, end: 13, reach: [0.1, 0.95], height: [0.6, 1.6], damage: 78, hitstun: 22, blockstun: 16, push: 0.1, knockdown: true, launch: 0.12 })],
       },
       heavy: {
         id: 'heavy', name: 'Saisie de la Médina', total: 42, cancels: [],
@@ -68,17 +76,22 @@ export const CHARACTERS = {
     walk: 0.045, backWalk: 0.036,
     jumpV: 0.2, jumpVX: 0.06,
     pushWidth: 0.38,
-    idealRange: 1.3,
+    idealRange: 1.65,
     throwRange: 0.9,
+    dash: { frames: 15, speed: 0.1, backFrames: 17, backSpeed: 0.075, backInvuln: 9 },
     shieldGuard: true,
     moves: {
       light: {
-        id: 'light', name: 'Frappe du bouclier', total: 18, cancels: ['heavy', 'special'],
+        id: 'light', name: 'Frappe du bouclier', total: 18, cancels: ['medium', 'heavy', 'special'],
         hits: [hit({ start: 5, end: 7, reach: [0.15, 0.98], height: [0.5, 1.85], damage: 42, hitstun: 17, blockstun: 12, push: 0.09 })],
+      },
+      medium: {
+        id: 'medium', name: 'Fauchage', total: 27, cancels: ['heavy', 'special'],
+        hits: [hit({ start: 8, end: 10, reach: [0.25, 1.32], height: [0.3, 1.3], damage: 60, hitstun: 20, blockstun: 14, push: 0.07 })],
       },
       heavy: {
         id: 'heavy', name: 'Iklwa', total: 33, cancels: ['special'],
-        hits: [hit({ start: 11, end: 14, reach: [0.3, 1.62], height: [0.85, 1.5], damage: 96, hitstun: 23, blockstun: 19, push: 0.07 })],
+        hits: [hit({ start: 11, end: 14, reach: [0.3, 1.62], height: [0.85, 1.5], damage: 90, hitstun: 23, blockstun: 19, push: 0.07 })],
       },
       throw: {
         id: 'throw', name: 'Renversement au bouclier', total: 32, cancels: [],
@@ -122,10 +135,15 @@ export const CHARACTERS = {
     pushWidth: 0.34,
     idealRange: 1.8,
     throwRange: 0.85,
+    dash: { frames: 13, speed: 0.12, backFrames: 16, backSpeed: 0.095, backInvuln: 10 },
     moves: {
       light: {
-        id: 'light', name: 'Rungu', total: 18, cancels: ['heavy', 'special'],
+        id: 'light', name: 'Rungu', total: 18, cancels: ['medium', 'heavy', 'special'],
         hits: [hit({ start: 6, end: 8, reach: [0.2, 1.12], height: [0.8, 1.8], damage: 44, hitstun: 17, blockstun: 11 })],
+      },
+      medium: {
+        id: 'medium', name: 'Revers de hampe', total: 28, cancels: ['heavy', 'special'],
+        hits: [hit({ start: 9, end: 11, reach: [0.3, 1.6], height: [0.7, 1.6], damage: 58, hitstun: 20, blockstun: 13, push: 0.08 })],
       },
       heavy: {
         id: 'heavy', name: 'Lance du Faucon', total: 39, cancels: ['special'],
