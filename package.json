@@ -1,0 +1,14 @@
+{
+  "name": "afro-fighters",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Jeu de combat 3D inspiré des cultures africaines — jouable dans le navigateur",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "node --test tests/unit/",
+    "balance": "node tools/balance.mjs",
+    "soak": "python3 tests/browser/soak.py"
+  },
+  "license": "UNLICENSED"
+}
