@@ -69,7 +69,7 @@ export function makeChecker(m) {
 }
 
 // Joue un match complet avec deux sources d'entrées. Retourne un bilan.
-export function playMatch(a, b, srcA, srcB, { maxFrames = 60 * 60 * 7, check = true, onEvent = null } = {}) {
+export function playMatch(a, b, srcA, srcB, { maxFrames = 60 * 60 * 7, check = true, onEvent = null, onFrame = null } = {}) {
   const m = new Match(a, b);
   const checker = check ? makeChecker(m) : null;
   const errors = [];
@@ -78,6 +78,7 @@ export function playMatch(a, b, srcA, srcB, { maxFrames = 60 * 60 * 7, check = t
     m.step([srcA(m.fighters[0], m.fighters[1], m), srcB(m.fighters[1], m.fighters[0], m)]);
     const evs = m.drainEvents();
     if (onEvent) for (const e of evs) onEvent(e, m);
+    if (onFrame) onFrame(m);
     if (checker) { const e = checker(); if (e.length && errors.length < 5) errors.push(...e); }
     const [p, q] = m.fighters;
     hash = (Math.imul(hash, 31) + ((p.x * 1000) | 0) + ((q.x * 1000) | 0) * 7 + p.hp * 13 + q.hp * 17) | 0;

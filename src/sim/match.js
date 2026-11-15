@@ -47,7 +47,7 @@ export class Match {
     return {
       x: f.x, y: f.y, state: f.state, phase: f.phase, move: f.move, serial: f.moveSerial,
       airborne: f.y > 0.02, blocking: f.blocking, guardFrames: f.guardFrames, mf: f.mf,
-      facing: f.facing, vx: f.vx,
+      facing: f.facing, vx: f.vx, char: f.char,
     };
   }
 
@@ -80,12 +80,20 @@ export class Match {
     this.bounds(a, b);
 
     if (this.phase === 'fight') {
-      const ha = this.checkHits(a, b);
-      const hb = this.checkHits(b, a);
-      // les deux touchent : échange (trade)
+      let ha = this.checkHits(a, b);
+      let hb = this.checkHits(b, a);
+      // Les deux touchent à la même frame. Coup contre coup : échange.
+      // Coup contre projection : le coup l'emporte et la projection est annulée
+      // (sinon le lanceur est interrompu et l'adversaire reste « projeté » sans fin).
+      if (ha && hb) {
+        const ta = ha.hit.kind === 'throw', tb = hb.hit.kind === 'throw';
+        if (ta && !tb) ha = null;
+        else if (tb && !ta) hb = null;
+      }
       if (ha) this.applyHit(a, b, ha.hit, ha.move);
       if (hb) this.applyHit(b, a, hb.hit, hb.move);
     }
+    this.releaseOrphans(a, b);
 
     if (this.phase === 'fight') {
       this.timerFrames++;
@@ -107,6 +115,22 @@ export class Match {
     this.recordHistory();
   }
 
+  // Filet de sécurité : un combattant « projeté » dont le lanceur n'est plus en train
+  // de projeter (interrompu, K.O., fin de manche) est relâché au lieu de rester bloqué.
+  releaseOrphans(a, b) {
+    for (const [f, o] of [[a, b], [b, a]]) {
+      if (f.state === 'thrown' && o.state !== 'throwing') {
+        f.setState('launched');
+        f.y = Math.max(f.y, 0.01); f.vy = 0.08; f.vx = -f.facing * 0.03;
+      }
+      if (f.state === 'throwing' && o.state !== 'thrown') {
+        f.throwData = null; f.move = null; f.setState('idle');
+      }
+    }
+  }
+
+  clampX(x) { return Math.max(-STAGE_HALF, Math.min(STAGE_HALF, x)); }
+
   recordHistory() {
     for (let i = 0; i < 2; i++) {
       const h = this.history[i];
@@ -122,6 +146,11 @@ export class Match {
     if (winner === -1) { this.fighters[0].roundsWon++; this.fighters[1].roundsWon++; }
     else this.fighters[winner].roundsWon++;
     for (const f of this.fighters) if (f.hp <= 0 && f.state !== 'ko') this.koFighter(f);
+    // une projection en cours ne doit plus infliger de dégâts une fois la manche terminée
+    for (const f of this.fighters) {
+      if (f.state === 'throwing') { f.throwData = null; f.move = null; f.setState('idle'); }
+    }
+    this.releaseOrphans(this.fighters[0], this.fighters[1]);
     this.emit({ type: 'roundEnd', winner, reason });
   }
 
@@ -218,9 +247,10 @@ export class Match {
     const hx = def.x - att.facing * 0.25;
 
     if (blocked) {
-      const chip = def.char.shieldGuard ? 0 : Math.round(h.damage * h.chip);
+      // le bouclier réduit de moitié les dégâts d'usure (il ne les annule plus : la garde était sans risque)
+      const chip = Math.round(h.damage * h.chip * (def.char.shieldGuard ? 0.5 : 1));
       def.hp = Math.max(1, def.hp - chip); // le blocage ne peut pas achever
-      def.stun = Math.max(4, h.blockstun - (def.char.shieldGuard ? 3 : 0));
+      def.stun = Math.max(4, h.blockstun - (def.char.shieldGuard ? 2 : 0));
       def.move = null;
       def.setState('blockstun');
       def.vx = att.facing * (h.push * 0.9);
@@ -253,7 +283,7 @@ export class Match {
 
     this.hitstop = h.hitstop ?? Math.round(5 + dmg / 18);
     const heavy = dmg >= 80 || h.knockdown;
-    this.emit({ type: 'hit', x: hx, y: midY, f: def.index, by: att.index, dmg, heavy, combo: def.combo, special: !!move.special, char: att.char.id });
+    this.emit({ type: 'hit', x: hx, y: midY, f: def.index, by: att.index, dmg, heavy, combo: def.combo, special: !!move.special, char: att.char.id, moveId: move.id, air: def.y > 0.05, attAir: att.y > 0.05 });
 
     if (def.hp <= 0) { this.koFighter(def, att.facing); return; }
 
@@ -285,7 +315,7 @@ export class Match {
     def.setState('thrown');
     def.vx = 0; def.vy = 0;
     def.thrownBy = att.index;
-    def.x = att.x + att.facing * 0.7;
+    def.x = this.clampX(att.x + att.facing * 0.7);
     def.y = 0;
     this.hitstop = 4;
     this.emit({ type: 'grab', f: def.index, by: att.index, special: !!move.special, char: att.char.id, moveId: move.id });
@@ -298,7 +328,7 @@ export class Match {
     def.hp = Math.max(0, def.hp - dmg);
     att.meter = Math.min(METER_MAX, att.meter + (att.throwData.move.special ? 0 : dmg * 0.1));
     def.meter = Math.min(METER_MAX, def.meter + dmg * 0.08);
-    def.x = att.x + att.facing * 1.0;
+    def.x = this.clampX(att.x + att.facing * 1.0);
     def.y = 0;
     this.hitstop = anim.fx === 'bigSlam' ? 16 : 9;
     this.emit({ type: 'slam', x: def.x, y: 0.2, f: def.index, by: att.index, dmg, big: anim.fx === 'bigSlam', char: att.char.id });

@@ -29,9 +29,12 @@ export const CHARACTERS = {
         hits: [hit({ start: 6, end: 8, reach: [0.15, 1.15], damage: 56, hitstun: 18, blockstun: 12, push: 0.05 })],
       },
       heavy: {
-        id: 'heavy', name: 'Saisie de la Médina', total: 36, cancels: [],
+        id: 'heavy', name: 'Saisie de la Médina', total: 42, cancels: [],
+        // le lutteur plonge vers l'avant : c'est son outil pour franchir la distance
+        advance: 0.45,
+        motion(f, fr) { f.vx = fr <= 8 ? f.facing * (this.advance / 8) : f.vx * 0.6; },
         hits: [hit({ start: 6, end: 9, kind: 'throw', reach: [0.0, 1.15], height: [0, 1.9], damage: 0 })],
-        throwAnim: { length: 52, slamAt: 34, damage: 135, fx: 'slam' },
+        throwAnim: { length: 52, slamAt: 34, damage: 120, fx: 'slam' },
       },
       air: {
         id: 'air', name: 'Chute du Roc', total: 60, cancels: [],
@@ -41,7 +44,7 @@ export const CHARACTERS = {
         id: 'special', name: 'BÀKK — Défi du Lutteur', special: true, total: 84, cancels: [],
         armor: [1, 34],
         hits: [hit({ start: 37, end: 54, kind: 'throw', reach: [-0.1, 1.1], height: [0, 1.9], damage: 0 })],
-        throwAnim: { length: 74, slamAt: 54, damage: 245, fx: 'bigSlam' },
+        throwAnim: { length: 74, slamAt: 54, damage: 195, fx: 'bigSlam' },
         motion(f, fr) {
           if (fr >= 35 && fr <= 54) f.vx = f.facing * 0.17;
           else f.vx *= 0.7;
@@ -75,7 +78,7 @@ export const CHARACTERS = {
       },
       heavy: {
         id: 'heavy', name: 'Iklwa', total: 33, cancels: ['special'],
-        hits: [hit({ start: 11, end: 14, reach: [0.3, 1.62], height: [0.85, 1.5], damage: 96, hitstun: 23, blockstun: 16, push: 0.07 })],
+        hits: [hit({ start: 11, end: 14, reach: [0.3, 1.62], height: [0.85, 1.5], damage: 96, hitstun: 23, blockstun: 19, push: 0.07 })],
       },
       throw: {
         id: 'throw', name: 'Renversement au bouclier', total: 32, cancels: [],
@@ -90,9 +93,9 @@ export const CHARACTERS = {
         id: 'special', name: 'IMPONDO ZANKOMO — Cornes du Buffle', special: true, total: 80, cancels: [],
         invuln: [1, 12],
         hits: [
-          hit({ start: 21, end: 25, reach: [0.0, 1.15], damage: 58, hitstun: 30, blockstun: 16, push: 0.015, chip: 0.15 }),
-          hit({ start: 33, end: 37, reach: [0.0, 1.15], damage: 58, hitstun: 30, blockstun: 16, push: 0.015, chip: 0.15 }),
-          hit({ start: 45, end: 50, reach: [0.0, 1.25], damage: 118, hitstun: 30, blockstun: 18, push: 0.12, knockdown: true, launch: 0.17, hitstop: 14, chip: 0.15 }),
+          hit({ start: 21, end: 25, reach: [0.0, 1.15], damage: 58, hitstun: 30, blockstun: 16, push: 0.015, chip: 0.25 }),
+          hit({ start: 33, end: 37, reach: [0.0, 1.15], damage: 58, hitstun: 30, blockstun: 16, push: 0.015, chip: 0.25 }),
+          hit({ start: 45, end: 50, reach: [0.0, 1.25], damage: 118, hitstun: 30, blockstun: 18, push: 0.12, knockdown: true, launch: 0.17, hitstop: 14, chip: 0.25 }),
         ],
         motion(f, fr) {
           if (fr >= 17 && fr <= 50) f.vx = f.facing * 0.15;
@@ -125,7 +128,7 @@ export const CHARACTERS = {
         hits: [hit({ start: 6, end: 8, reach: [0.2, 1.12], height: [0.8, 1.8], damage: 44, hitstun: 17, blockstun: 11 })],
       },
       heavy: {
-        id: 'heavy', name: 'Lance du Faucon', total: 38, cancels: ['special'],
+        id: 'heavy', name: 'Lance du Faucon', total: 39, cancels: ['special'],
         hits: [hit({ start: 13, end: 16, reach: [0.4, 2.05], height: [0.85, 1.4], damage: 80, hitstun: 22, blockstun: 15, push: 0.07 })],
       },
       throw: {
@@ -139,9 +142,9 @@ export const CHARACTERS = {
       },
       special: {
         id: 'special', name: 'ADUMU — Danse des Sauts', special: true, total: 112, cancels: [],
-        invuln: [1, 62],
+        invuln: [1, 40],
         airborneMove: true,
-        hits: [hit({ start: 74, end: 86, reach: [-0.55, 0.75], height: [-0.8, 1.1], damage: 195, hitstun: 30, blockstun: 20, push: 0.1, knockdown: true, launch: 0.15, hitstop: 15, chip: 0.18 })],
+        hits: [hit({ start: 74, end: 86, reach: [-0.55, 0.75], height: [-0.8, 1.1], damage: 195, hitstun: 30, blockstun: 16, push: 0.1, knockdown: true, launch: 0.15, hitstop: 15, chip: 0.25 })],
         motion(f, fr, opp) {
           // 3 sauts verticaux de plus en plus hauts (adumu), puis bond et piqué sur l'adversaire
           const hops = [[1, 20, 0.55], [21, 40, 0.85], [41, 62, 1.25]];
@@ -188,5 +191,6 @@ for (const id of ROSTER) {
     m.activeEnd = Math.max(...m.hits.map((h) => h.end));
     m.maxReach = Math.max(...m.hits.map((h) => h.reach[1]));
     m.isThrow = m.hits.every((h) => h.kind === 'throw');
+    m.advance = m.advance || 0;
   }
 }

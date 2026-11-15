@@ -1,4 +1,7 @@
-import { METER_MAX } from './constants.js';
+import { METER_MAX, HURT_HALF_WIDTH } from './constants.js';
+
+// Portée réelle d'un coup : la portée du coup plus la demi-largeur de la cible, avec une petite marge.
+const eff = (m) => m.maxReach + (m.advance || 0) + HURT_HALF_WIDTH - 0.08;
 
 // Trois profils réellement distincts :
 //  - facile    : perception lente, déplacements erratiques, attaque souvent hors de portée, garde rarement, aucun combo.
@@ -38,7 +41,10 @@ export class AIController {
     this.decidedSerial = -1;
     this.comboSerial = -1;
     this.reflexSerial = -1;
-    this.lastAirSerial = -1;
+    this.aaDecided = false;
+    this.aaArmed = false;
+    this.evade = null;
+    this.interrupt = null;
   }
 
   rand() {
@@ -90,13 +96,35 @@ export class AIController {
     if (oThreat && (dist < oReach || o.move.special)) {
       if (this.decidedSerial !== o.serial) {
         this.decidedSerial = o.serial;
-        if (o.move.isThrow) {
+        if (o.move.isThrow && o.move.special) {
+          // projection spéciale (Bàkk) : imblocable. Reculer pendant la danse, puis sauter au moment de la charge.
+          if (this.chance(P.guard)) this.evade = { serial: o.serial, jumped: false };
+        } else if (o.move.isThrow) {
           // contre une projection : sauter ou frapper (garder ne sert à rien)
-          if (this.chance(P.guard * 0.7)) this.intent = { type: this.chance(0.5) ? 'jumpAway' : 'jab', frames: 4 };
+          // Une saisie normale sort trop vite pour être contrée par réflexe : l'IA experte recule
+          // d'un pas pour la faire échouer puis la punir ; les autres tentent un saut ou un coup.
+          if (P.footsies) { if (this.chance(P.guard)) this.intent = { type: 'retreat', frames: 10 }; }
+          else if (this.chance(P.guard * 0.7)) this.intent = { type: this.chance(0.5) ? 'jumpAway' : 'jab', frames: 4 };
+        } else if (o.move.airborneMove && dist < 1.9 && this.chance(P.punish)) {
+          // spécial aérien lent (Adumu) : il est vulnérable après son premier bond, on l'interrompt
+          this.interrupt = { serial: o.serial };
         } else if (this.chance(P.guard)) {
           this.guardUntil = fr + 22 + (o.move.special ? 70 : 0);
         }
       }
+    }
+    if (this.evade) {
+      if (!oAttacking || o.serial !== this.evade.serial || o.phase === 'recovery') this.evade = null;
+      else if (o.mf < 30) { walk(-1); return out; }
+      else if (!this.evade.jumped) { this.evade.jumped = true; walk(-1); press('up'); return out; }
+      else { walk(-1); return out; }
+    }
+    if (this.interrupt) {
+      const inv = oAttacking && o.move.invuln ? o.move.invuln[1] : 0;
+      if (!oAttacking || o.serial !== this.interrupt.serial || o.mf > 60) { this.interrupt = null; this.guardUntil = fr + 40; }
+      else if (o.mf > inv - P.reaction && dist < c.moves.light.maxReach + 0.1) { press('light'); return out; }
+      else if (dist > c.moves.light.maxReach - 0.1) { walk(1); return out; }
+      else return out;
     }
     if (fr < this.guardUntil) { out.held.guard = true; return out; }
 
@@ -113,14 +141,22 @@ export class AIController {
       }
     }
 
-    // 4) Anti-aérien
-    if (!o.airborne) this.aaDecided = false;
-    else if (!this.aaDecided && o.state === 'air' || o.state === 'airattack') {
-      if (!this.aaDecided && dist < 2.2) {
+    // 4) Anti-aérien : une seule décision par saut adverse, puis frappe au bon moment
+    //    (quand l'adversaire redescend à portée), au lieu de frapper dès le décollage.
+    const oJumping = o.state === 'air' || o.state === 'airattack';
+    if (!oJumping) { this.aaDecided = false; this.aaArmed = false; }
+    else {
+      if (!this.aaDecided && dist < 2.6) {
         this.aaDecided = true;
-        if (this.chance(P.antiAir)) {
-          const reach = c.moves.heavy.maxReach;
-          press(!c.moves.heavy.isThrow && dist < reach ? 'heavy' : 'light');
+        this.aaArmed = this.chance(P.antiAir);
+      }
+      if (this.aaArmed) {
+        const useHeavy = !c.moves.heavy.isThrow && dist < c.moves.heavy.maxReach;
+        const mv = useHeavy ? c.moves.heavy : c.moves.light;
+        const top = mv.hits[0].height[1];
+        if (dist < mv.maxReach + 0.15 && o.y < top + 0.35) {
+          this.aaArmed = false;
+          press(useHeavy ? 'heavy' : 'light');
           return out;
         }
       }
@@ -170,8 +206,8 @@ export class AIController {
   bestMoveFor(self, dist) {
     const c = self.char;
     if (self.meter >= METER_MAX && this.p.smartSpecial && this.specialInRange(self, dist)) return 'special';
-    if (dist < c.moves.light.maxReach + 0.1) return c.moves.heavy.isThrow ? 'light' : (this.chance(0.5) ? 'heavy' : 'light');
-    if (!c.moves.heavy.isThrow && dist < c.moves.heavy.maxReach + 0.1) return 'heavy';
+    if (dist < eff(c.moves.light)) return c.moves.heavy.isThrow ? 'light' : (this.chance(0.5) ? 'heavy' : 'light');
+    if (!c.moves.heavy.isThrow && dist < eff(c.moves.heavy)) return 'heavy';
     return null;
   }
 
@@ -179,14 +215,21 @@ export class AIController {
     switch (self.char.id) {
       case 'modou': return dist < 3.6;
       case 'themba': return dist < 4.6;
-      default: return true; // l'adumu suit l'adversaire
+      default: return this.p.spacing >= 0.7 ? dist > 2.0 : true; // l'adumu suit l'adversaire, mais il est interruptible de près
     }
   }
 
   chooseIntent(self, o, dist) {
     const P = this.p;
     const c = self.char;
-    const ideal = c.idealRange;
+    // Les IA qui gèrent la distance se placent au bord de leur propre portée réelle,
+    // et restent hors de portée de saisie d'un lutteur.
+    let ideal = c.idealRange;
+    if (P.footsies) {
+      ideal = eff(c.moves.heavy) - 0.12;
+      const oc = o.char;
+      if (oc && oc.moves.heavy.isThrow && !c.moves.heavy.isThrow) ideal = Math.min(Math.max(ideal, eff(oc.moves.heavy) + 0.1), eff(c.moves.heavy) - 0.05);
+    }
 
     // Facile : comportement erratique
     if (this.chance(1 - P.spacing)) {
@@ -209,7 +252,7 @@ export class AIController {
       else this.intent = { type: 'approach', frames: Math.round(10 + this.rand() * 20) };
       return;
     }
-    if (dist < ideal - 0.45 && c.id !== 'modou') {
+    if (dist < ideal - 0.45 && !c.moves.heavy.isThrow) {
       if (this.chance(P.aggression * 0.6)) this.intent = { type: 'attack', move: 'light', frames: 1 };
       else this.intent = { type: 'retreat', frames: Math.round(8 + this.rand() * 14) };
       return;
@@ -217,8 +260,8 @@ export class AIController {
     // À bonne distance
     if (this.chance(P.aggression)) {
       let mv;
-      if (c.id === 'modou') mv = dist < c.throwRange - 0.05 && this.chance(0.55) ? 'throw' : 'light';
-      else mv = dist > c.moves.light.maxReach ? 'heavy' : (this.chance(0.6) ? 'light' : 'heavy');
+      if (c.moves.heavy.isThrow) mv = dist < eff(c.moves.heavy) - 0.1 && (dist > eff(c.moves.light) || this.chance(0.55)) ? 'throw' : 'light';
+      else mv = dist > eff(c.moves.light) ? 'heavy' : (this.chance(0.6) ? 'light' : 'heavy');
       this.intent = { type: 'attack', move: mv, frames: 1 };
       return;
     }
