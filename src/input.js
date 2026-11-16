@@ -15,6 +15,9 @@ export const DEFAULT_BINDINGS = {
 const PAD = { light: [2], medium: [3], heavy: [1], special: [5, 7], guard: [4], dash: [6], up: [0, 12], left: [14], right: [15] };
 export const PAD_LABELS = { left: '←', right: '→', up: '✕', guard: 'L1', light: '□', medium: '△', heavy: '○', special: 'R1', dash: 'L2' };
 const DOUBLE_TAP_MS = 240;
+// Un code de touche valide (KeyboardEvent.code) est toujours alphanumérique : KeyA, ArrowLeft, Numpad5, F3…
+// Ce filtre empêche qu'une sauvegarde fabriquée injecte du HTML là où les touches sont affichées.
+const VALID_CODE = /^[A-Za-z0-9]{1,24}$/;
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 export class Input {
@@ -73,7 +76,8 @@ export class Input {
     if (custom && typeof custom === 'object') {
       for (const slot of Object.keys(this.bindings)) for (const action of ACTIONS) {
         const v = custom[slot] && custom[slot][action];
-        if (Array.isArray(v) && v.length && v.every((c) => typeof c === 'string')) this.bindings[slot][action] = v.slice(0, 3);
+        const ok = Array.isArray(v) ? v.filter((c) => typeof c === 'string' && VALID_CODE.test(c)) : [];
+        if (ok.length) this.bindings[slot][action] = ok.slice(0, 3);
       }
     }
     this.index();
@@ -81,6 +85,7 @@ export class Input {
 
   // Attribue une touche à une action ; la retire des autres actions du même jeu de commandes.
   rebind(slot, action, code) {
+    if (!VALID_CODE.test(code)) return clone(this.bindings);
     for (const a of ACTIONS) this.bindings[slot][a] = this.bindings[slot][a].filter((c) => c !== code);
     this.bindings[slot][action] = [code];
     this.index();

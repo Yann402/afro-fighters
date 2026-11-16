@@ -25,6 +25,11 @@
 - Sauvegarde locale automatique, versionnée, avec copie de secours, export et import.
 - Touches reconfigurables ; qualité graphique haute, moyenne, basse ou automatique.
 
+### Sécurité
+- Une sauvegarde importée fabriquée pouvait exécuter du code JavaScript dans la page : les codes de
+  touches sont désormais validés à la lecture, et tout libellé affiché est échappé. Vérifié par un
+  test de non-régression et par une attaque rejouée dans le navigateur.
+
 ### Technique
 - `saveState` / `loadState` : état complet d'un match copiable (préparation du jeu en ligne).
 - 112 tests unitaires ; tests navigateur : parcours (50 vérifications), manettes simulées (20), endurance.

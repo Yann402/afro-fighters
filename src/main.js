@@ -97,7 +97,10 @@ function toast(text, ms = 2600) {
   const t = $('toast'); t.textContent = text; t.classList.add('show');
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), ms);
 }
-const kbd = (slot, action) => `<kbd>${input.label(slot, action)}</kbd>`;
+// Les libellés de touches viennent de la disposition réelle du clavier et peuvent contenir < & " :
+// tout ce qui est inséré en HTML passe par là.
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const kbd = (slot, action) => `<kbd>${esc(input.label(slot, action))}</kbd>`;
 const statBar = (label, v) => `<div class="stat"><span>${label}</span><div class="bar">${[1, 2, 3, 4, 5].map((k) => `<i class="${k <= v ? 'on' : ''}"></i>`).join('')}</div></div>`;
 
 // ═════════════════════════════ Aperçu 3D dans les menus
@@ -169,7 +172,7 @@ function charInfo(id) {
 
 function commandsTable(slots) {
   const head = slots.map((s) => `<th>${{ solo: 'Clavier', p1: 'Joueur 1', p2: 'Joueur 2' }[s]}</th>`).join('');
-  const rows = ACTIONS.map((a) => `<tr><td>${ACTION_LABELS[a]}</td>${slots.map((s) => `<td>${(input.bindings[s][a] || []).map((c) => `<kbd>${input.keyLabel(c)}</kbd>`).join(' ')}</td>`).join('')}<td>${PAD_LABELS[a]}</td></tr>`).join('');
+  const rows = ACTIONS.map((a) => `<tr><td>${ACTION_LABELS[a]}</td>${slots.map((s) => `<td>${(input.bindings[s][a] || []).map((c) => `<kbd>${esc(input.keyLabel(c))}</kbd>`).join(' ')}</td>`).join('')}<td>${PAD_LABELS[a]}</td></tr>`).join('');
   return `<table class="grid"><thead><tr><th>Action</th>${head}<th>Manette PS4/PS5</th></tr></thead><tbody>${rows}
     <tr><td>Projection</td><td colspan="${slots.length + 1}">Avant + coup lourd, au contact</td></tr>
     <tr><td>Ruée / esquive</td><td colspan="${slots.length + 1}">Touche de ruée, ou deux appuis rapides sur une direction. Vers l'arrière : esquive invulnérable un court instant</td></tr>
@@ -357,7 +360,7 @@ const SCREENS = {
       head: `<h2>Commandes — ${{ solo: 'un joueur', p1: 'joueur 1', p2: 'joueur 2' }[slot]}</h2><p class="lead">Valide une action puis appuie sur la nouvelle touche. Échap annule. Manette : ${ACTIONS.slice(3).map((a) => `${PAD_LABELS[a]} ${ACTION_LABELS[a].toLowerCase()}`).join(' · ')}.</p>`,
       items: [
         ...ACTIONS.map((a) => ({
-          label: ACTION_LABELS[a], value: S.capturing === a ? 'Appuie sur une touche…' : (input.bindings[slot][a] || []).map((c) => input.keyLabel(c)).join(' / ') || '—',
+          label: ACTION_LABELS[a], value: S.capturing === a ? 'Appuie sur une touche…' : esc((input.bindings[slot][a] || []).map((c) => input.keyLabel(c)).join(' / ')) || '—',
           action: () => {
             S.capturing = a;
             input.capture = (code) => {
@@ -639,7 +642,8 @@ function updateHint(force = false) {
   const key = S.mode + input.lastDevice + JSON.stringify(input.bindings);
   if (!force && key === hintKey) return;
   hintKey = key;
-  const line = (slot) => `<b>${input.label(slot, 'left')} ${input.label(slot, 'right')}</b> bouger · <b>${input.label(slot, 'up')}</b> saut · <b>${input.label(slot, 'guard')}</b> garde · <b>${input.label(slot, 'light')}</b> léger · <b>${input.label(slot, 'medium')}</b> moyen · <b>${input.label(slot, 'heavy')}</b> lourd · <b>${input.label(slot, 'special')}</b> spécial · <b>${input.label(slot, 'dash')}</b> ruée`;
+  const L = (slot, a) => esc(input.label(slot, a));
+  const line = (slot) => `<b>${L(slot, 'left')} ${L(slot, 'right')}</b> bouger · <b>${L(slot, 'up')}</b> saut · <b>${L(slot, 'guard')}</b> garde · <b>${L(slot, 'light')}</b> léger · <b>${L(slot, 'medium')}</b> moyen · <b>${L(slot, 'heavy')}</b> lourd · <b>${L(slot, 'special')}</b> spécial · <b>${L(slot, 'dash')}</b> ruée`;
   $('fightHint').innerHTML = S.mode === 'versus' ? `J1 — ${line('p1')}<br/><span class="p2k">J2 — ${line('p2')}</span>` : `${line('solo')} · <b>Échap</b> pause`;
 }
 

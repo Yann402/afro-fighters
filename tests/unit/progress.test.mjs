@@ -99,3 +99,4 @@ test('stockage indisponible (navigation privée, quota) : le jeu continue sans s
   assert.equal(p.save(), false);
   assert.equal(p.recordMatch({ char: 'modou', difficulty: 'normal', result: 'win' }).xp, 100);
 });
+
