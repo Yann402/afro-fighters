@@ -2,8 +2,9 @@
 
 | Fichier | Contenu | Portée |
 |---|---|---|
-| `equilibrage-v1.1.txt` | 1 800 matchs IA contre IA (`npm run balance`) | Simulation pure, indépendante de la machine |
-| `endurance-v1.1.txt` / `.json` | 8 matchs enchaînés dans Chrome (`npm run soak`) | **Stabilité** en rendu logiciel |
+| `equilibrage-v1.3.txt` | 1 800 matchs IA contre IA (`npm run balance`), version actuelle | Simulation pure, indépendante de la machine |
+| `endurance-v1.3.txt` / `.json` | 6 cycles dans Chrome, tous modes (`npm run soak`), version actuelle | **Stabilité** en rendu logiciel |
+| `equilibrage-v1.1.txt`, `endurance-v1.1.*` | Mêmes mesures pour la version 1.1 | Historique |
 
 ## Ce que valent les mesures d'endurance
 Elles ont été relevées dans Chrome sans interface, avec un rendu **logiciel** (Mesa llvmpipe, sans carte

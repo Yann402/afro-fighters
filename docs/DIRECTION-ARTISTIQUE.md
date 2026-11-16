@@ -1,4 +1,8 @@
-# Refonte artistique (v1.2) — stratégie
+# Refonte artistique — stratégie et état
+
+**État (version 1.3)** : la chaîne Blender est en place et les trois combattants sont modélisés. Blender
+(`bpy` 5.3.0) a été installé avec accord, dans un environnement isolé. Ce qui suit est le plan d'origine ;
+ce qui reste à faire figure dans `FEUILLE-DE-ROUTE.md`.
 
 Direction retenue : **stylisé haut de gamme**. Ce document dit ce qui est réalisable avec les outils
 réellement disponibles, et ce qui ne l'est pas.

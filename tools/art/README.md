@@ -7,8 +7,10 @@ dans le dépôt. Blender ne sert qu'à les régénérer.
 | Fichier | Rôle |
 |---|---|
 | `lib/forge.py` | Outils de modélisation : volumes, fusion en une peau, creusement, peinture par sommet, squelette, export |
-| `lib/human.py` | Corps stylisé commun : squelette, corps, tête, yeux, mains |
-| `themba.py` | Themba : proportions, visage, tenue, bouclier, lance → `assets/models/themba.glb` |
+| `lib/human.py` | Corps stylisé commun : squelette, corps, tête, yeux, mains (poing fermé ou main ouverte) |
+| `lib/kit.py` | Atelier commun : construit corps, tête et mains, pose les accessoires sur la peau, exporte |
+| `lib/textures.py` | Textures calculées : robe de vache, rayures du pagne, carreaux du shuka |
+| `modou.py`, `themba.py`, `lekishon.py` | Un script par combattant : proportions, visage, tenue, armes → `assets/models/<nom>.glb` |
 | `viewer.html` | Visionneuse Three.js avec l'éclairage et les matériaux du jeu |
 | `capture.py` | Planche de contrôle : captures de la visionneuse sous plusieurs angles |
 | `requirements.txt` | Blender (`bpy` 5.3.0), avec empreintes SHA-256 |
@@ -18,7 +20,7 @@ dans le dépôt. Blender ne sert qu'à les régénérer.
 python3.13 -m venv .venv-art
 .venv-art/bin/pip install --require-hashes --no-deps -r tools/art/requirements.txt
 .venv-art/bin/pip install cattrs cython "numpy>=2.2,<3" requests zstandard
-.venv-art/bin/python tools/art/themba.py          # environ 10 secondes
+.venv-art/bin/python tools/art/themba.py          # environ 15 secondes ; idem modou.py, lekishon.py
 npm start                                          # puis http://localhost:8000/tools/art/viewer.html
 python3 tools/art/capture.py assets/models/themba.glb planche.png
 ```
@@ -30,6 +32,7 @@ python3 tools/art/capture.py assets/models/themba.glb planche.png
 4. **Couleur** : peinte par sommet (teintes, creux assombris, taches de pelage) ; texture image pour le bouclier.
 5. **Squelette** : 17 os, mêmes noms pour tous les combattants ; poids de peau automatiques.
 6. **Accessoires** : pièces rigides fixées aux os, posées sur la peau par projection.
+7. **Vêtements souples** : pagnes, jupe et écharpe reprennent les poids de peau du corps le plus proche.
 
 ## Conventions à respecter (le jeu en dépend)
 - Le personnage regarde vers -Y dans Blender, Z vers le haut, sa gauche en +X.
@@ -37,6 +40,8 @@ python3 tools/art/capture.py assets/models/themba.glb planche.png
 - Noms des os : `hips spine chest neck head upperArmL/R forearmL/R handL/R thighL/R shinL/R footL/R`.
 - Un objet nommé `shield` fixé à `forearmL` est maintenu face à l'adversaire par le jeu ; son pivot doit être à la prise en main.
 - Budget indicatif : 45 000 triangles et 1,5 Mo par combattant.
+- Matériaux nommés `pelage`, `tissu`, `shuka`, `peau_de_vache`, `cheveux` : reteints par les tenues alternatives.
+- Taille : tous les modèles ont le même squelette ; l'échelle de chacun est réglée dans `src/render/glbFighter.js`.
 
 ## Licence
 Blender (`bpy`) est sous licence GPL-3.0. Les scripts de ce dossier s'appuient sur son interface de

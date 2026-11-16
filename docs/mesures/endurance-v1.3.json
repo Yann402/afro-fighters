@@ -7,7 +7,7 @@
   {
    "cycle": 0,
    "étape": "écran titre",
-   "geometries": 169,
+   "geometries": 168,
    "textures": 10,
    "programs": 13,
    "heapMB": 21.4,
@@ -22,12 +22,12 @@
    "heapMB": 17.1,
    "sceneChildren": 5,
    "pic géométries": 234,
-   "durée s": 70.0,
-   "img/s": 2.5,
-   "image p95 ms": 500,
-   "sim ms": 0.327,
-   "rendu ms": 4.032,
-   "abandonné s": 108.667
+   "durée s": 65.9,
+   "img/s": 2.4,
+   "image p95 ms": 483.2,
+   "sim ms": 0.248,
+   "rendu ms": 3.493,
+   "abandonné s": 98
   },
   {
    "cycle": 1,
@@ -47,12 +47,12 @@
    "heapMB": 17.6,
    "sceneChildren": 5,
    "pic géométries": 275,
-   "durée s": 64.7,
-   "img/s": 2.5,
-   "image p95 ms": 483.4,
-   "sim ms": 0.664,
-   "rendu ms": 3.658,
-   "abandonné s": 207.167
+   "durée s": 73.3,
+   "img/s": 2.4,
+   "image p95 ms": 483.2,
+   "sim ms": 0.241,
+   "rendu ms": 4.773,
+   "abandonné s": 209.667
   },
   {
    "cycle": 2,
@@ -69,15 +69,15 @@
    "geometries": 275,
    "textures": 24,
    "programs": 20,
-   "heapMB": 17.7,
+   "heapMB": 17.8,
    "sceneChildren": 5,
    "pic géométries": 275,
-   "durée s": 62.5,
-   "img/s": 2.5,
-   "image p95 ms": 500.1,
-   "sim ms": 0.356,
-   "rendu ms": 4.021,
-   "abandonné s": 308.317
+   "durée s": 64.4,
+   "img/s": 2.4,
+   "image p95 ms": 483.4,
+   "sim ms": 0.245,
+   "rendu ms": 2.597,
+   "abandonné s": 310.5
   },
   {
    "cycle": 3,
@@ -85,7 +85,7 @@
    "geometries": 275,
    "textures": 13,
    "programs": 17,
-   "heapMB": 17.3,
+   "heapMB": 17.5,
    "sceneChildren": 3
   },
   {
@@ -97,12 +97,12 @@
    "heapMB": 17.8,
    "sceneChildren": 5,
    "pic géométries": 275,
-   "durée s": 69.4,
-   "img/s": 2.5,
-   "image p95 ms": 500.1,
-   "sim ms": 0.297,
-   "rendu ms": 4.282,
-   "abandonné s": 417.65
+   "durée s": 70.7,
+   "img/s": 2.4,
+   "image p95 ms": 483.4,
+   "sim ms": 0.275,
+   "rendu ms": 2.085,
+   "abandonné s": 420.333
   },
   {
    "cycle": 4,
@@ -122,12 +122,12 @@
    "heapMB": 17.9,
    "sceneChildren": 5,
    "pic géométries": 275,
-   "durée s": 61.2,
-   "img/s": 2.3,
-   "image p95 ms": 533.4,
-   "sim ms": 1.611,
-   "rendu ms": 3.626,
-   "abandonné s": 510.583
+   "durée s": 61.5,
+   "img/s": 2.4,
+   "image p95 ms": 483.4,
+   "sim ms": 1.734,
+   "rendu ms": 2.494,
+   "abandonné s": 514.5
   },
   {
    "cycle": 5,
@@ -147,12 +147,12 @@
    "heapMB": 17.9,
    "sceneChildren": 5,
    "pic géométries": 275,
-   "durée s": 94.8,
+   "durée s": 83.8,
    "img/s": 2.5,
-   "image p95 ms": 483.4,
-   "sim ms": 0.37,
-   "rendu ms": 3.935,
-   "abandonné s": 665.75
+   "image p95 ms": 466.6,
+   "sim ms": 0.551,
+   "rendu ms": 3.345,
+   "abandonné s": 648.5
   },
   {
    "cycle": 6,
@@ -160,7 +160,7 @@
    "geometries": 275,
    "textures": 13,
    "programs": 17,
-   "heapMB": 17.4,
+   "heapMB": 17.5,
    "sceneChildren": 3
   }
  ],

@@ -1,12 +1,38 @@
-# Équilibrage — méthode et résultats (v1.1)
+# Équilibrage — méthode et résultats
 
 ## Méthode
 `node tools/balance.mjs 100` fait jouer les IA entre elles : 100 matchs par confrontation et par côté,
-soit 600 matchs par niveau, avec des graines fixes (résultat reproductible). Le rapport complet est dans
-`docs/mesures/equilibrage-v1.1.txt`.
+soit 600 matchs par niveau, avec des graines fixes (résultat reproductible). Rapports complets :
+`docs/mesures/equilibrage-v1.3.txt` (version actuelle) et `equilibrage-v1.1.txt`.
 
 Limite à garder en tête : ce sont des IA, pas des joueurs. Un écart entre IA peut venir de la façon dont
 l'IA joue un personnage, pas du personnage lui-même. La marge d'erreur est d'environ ±5 points par confrontation.
+
+## Version 1.3 (version actuelle)
+Les nouvelles mécaniques (coup moyen, ruée, esquive, contre, garde brisée) ont obligé à tout rééquilibrer.
+
+| Confrontation | IA facile | IA normale | IA difficile |
+|---|---|---|---|
+| Modou – Themba | 83 – 17 | 55 – 45 | 35 – 65 |
+| Modou – Lekishon | 87 – 13 | **75 – 25** | 60 – 40 |
+| Themba – Lekishon | 61 – 39 | 39 – 61 | 48 – 52 |
+| Taux global Modou / Themba / Lekishon | 85 / 39 / 26 | 65 / 42 / 43 | 47 / 57 / 46 |
+
+Lecture :
+- **IA difficile** : équilibre correct, aucune confrontation au-delà de 65 – 35.
+- **IA normale** : Modou est trop fort, surtout contre Lekishon. Sa charge armurée et sa saisie avec élan
+  dominent une IA qui gère mal la distance.
+- **IA facile** : Modou écrase une IA qui ne garde pas (85 %), et 347 manches sur environ 1 500 se
+  terminent au chrono : cette IA est trop passive. Cela ne concerne que des matchs IA contre IA.
+- L'équilibre dépend fortement du niveau de l'IA : les réglages qui équilibrent le niveau normal
+  déséquilibrent le niveau difficile, et inversement. Sept séries de réglages ont été comparées avant de
+  retenir celle-ci. Un vrai équilibrage demandera des parties jouées par des humains.
+
+Réglages retenus en 1.3 : Modou gagne une charge armurée (coup moyen) et une ruée plus rapide ; l'iklwa de
+Themba passe de 96 à 90 dégâts ; l'IA ne peut plus contrer par accident (elle le faisait à chaque garde
+réflexe, ce qui donnait 72 à 87 % de victoires à Themba) ; enchaînement maximal observé : 21 % des points de vie.
+
+## Version 1.1 (historique)
 
 ## Taux de victoire par confrontation
 
