@@ -1,0 +1,62 @@
+Afro Fighters — conditions d'utilisation
+========================================
+
+Ce dépôt contient deux ensembles distincts, soumis à des conditions différentes.
+
+
+1. LE CODE — licence MIT
+------------------------
+
+S'applique à tous les fichiers de code source et de documentation du dépôt :
+src/, tests/, tools/, docs/, css/, index.html, package.json, et les fichiers Markdown.
+
+Copyright (c) 2026 Yann402
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+2. LES PERSONNAGES ET LES RESSOURCES — tous droits réservés
+-----------------------------------------------------------
+
+S'applique aux fichiers de assets/, aux personnages Modou, Themba et Lekishon
+(leurs noms, apparences, tenues, armes, pouvoirs et descriptions), ainsi qu'au
+nom « Afro Fighters » et à son identité graphique.
+
+Copyright (c) 2026 Yann402. Tous droits réservés.
+
+Ces éléments ne sont pas couverts par la licence MIT ci-dessus. Il est permis
+de cloner le dépôt et de lancer le jeu pour l'essayer ou l'étudier. Toute autre
+utilisation — redistribution, publication d'une version modifiée, usage
+commercial, réutilisation des personnages dans un autre projet — demande une
+autorisation écrite préalable.
+
+Autrement dit : le moteur de jeu est librement réutilisable, les personnages
+ne le sont pas.
+
+
+3. COMPOSANTS DE TIERS
+-----------------------
+
+vendor/ contient Three.js r187 et ses modules complémentaires, sous licence MIT
+(Copyright (c) 2010-2025 three.js authors). Texte complet : vendor/THREE_LICENSE.
+
+tools/art/ contient des scripts qui s'appuient sur l'interface de programmation
+de Blender (module Python bpy, licence GPL-3.0). Ces scripts ne sont nécessaires
+que pour régénérer les modèles 3D ; ni le jeu ni les fichiers GLB produits ne
+contiennent de code de Blender.

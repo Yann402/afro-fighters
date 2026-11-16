@@ -1,0 +1,8 @@
+# Blender en module Python. Python 3.13 exactement (exigence du paquet). Vérifié par empreinte SHA-256.
+# Installation :  python3.13 -m venv .venv-art && .venv-art/bin/pip install --require-hashes --no-deps -r tools/art/requirements.txt
+#                 .venv-art/bin/pip install cattrs cython "numpy>=2.2,<3" requests zstandard
+bpy==5.3.0 \
+    --hash=sha256:5850cd39369e4cd8c67ed067d39ec1e57426103ddc709436e13209b56665c6a0 \
+    --hash=sha256:75f306ce22e7f020021bee53810343bd21d8fbd8e48c060bcbf3b7dfb61caac5 \
+    --hash=sha256:9501b722e49b61ac9dcc8b2fded7a0de4e9dc05852d75abe10b76baf4cc5fb5e \
+    --hash=sha256:011e865d6689c529449a3d2d1a7ba1a8e4de69741ff070d92fe71a37444a5b16

@@ -4,18 +4,16 @@ import { softDotTex } from './textures.js';
 // Système d'effets : particules (étincelles, poussière, aura), ondes de choc, images rémanentes.
 const MAX = 1400;
 
+// Une image rémanente d'un modèle à squelette possède sa propre copie des os (et leur texture).
+function freeSkeletons(obj) { obj.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); }); }
+
 export class FX {
   constructor(scene) {
     this.scene = scene;
-    const geo = new THREE.BufferGeometry();
-    this.pos = new Float32Array(MAX * 3);
-    this.col = new Float32Array(MAX * 3);
-    this.size = new Float32Array(MAX);
-    geo.setAttribute('position', new THREE.BufferAttribute(this.pos, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(this.col, 3));
-    geo.setAttribute('size', new THREE.BufferAttribute(this.size, 1));
-    this.parts = [];
     const tex = softDotTex();
+    this.tex = tex;
+    // une seule géométrie d'anneau, partagée par toutes les ondes de choc
+    this.ringGeo = new THREE.RingGeometry(0.8, 1, 40);
     const mkMat = (blending) => new THREE.ShaderMaterial({
       uniforms: { map: { value: tex }, scale: { value: 420 }, premul: { value: blending === THREE.AdditiveBlending ? 1 : 0 } },
       vertexShader: `attribute float size; attribute vec3 color; varying vec3 vColor; uniform float scale;
@@ -69,9 +67,8 @@ export class FX {
   }
 
   ring(x, y, color, max = 2.5, life = 0.45, ground = true) {
-    const geo = new THREE.RingGeometry(0.8, 1, 40);
     const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
-    const mesh = new THREE.Mesh(geo, mat);
+    const mesh = new THREE.Mesh(this.ringGeo, mat);
     if (ground) { mesh.rotation.x = -Math.PI / 2; mesh.position.set(x, 0.03, 0); }
     else mesh.position.set(x, y, 0.4);
     this.scene.add(mesh);
@@ -80,7 +77,7 @@ export class FX {
 
   // Image rémanente : copie figée du combattant qui s'estompe
   afterimage(view, blue = false, offset = null, life = 0.3, opacity = null) {
-    const clone = view.root.clone(true);
+    const clone = view.snapshot();
     const mat = (blue ? this.ghostMatBlue : this.ghostMat).clone();
     if (opacity != null) mat.opacity = opacity;
     clone.traverse((o) => { if (o.isMesh) { o.material = mat; o.castShadow = false; } });
@@ -100,6 +97,30 @@ export class FX {
   block(x, y, shield) {
     this.spawn('glow', 18, { x, y, speed: 4.5, life: 0.22, size: 0.13, colors: shield ? [[1, 0.95, 0.85], [0.95, 0.8, 0.55]] : [[0.6, 0.85, 1], [0.9, 0.97, 1]], drag: 7 });
     this.ring(x, y, shield ? '#ffe6b0' : '#9fd6ff', 0.8, 0.18, false);
+  }
+
+  // Contre réussi : éclat froid et net, deux anneaux
+  parry(x, y) {
+    this.spawn('glow', 34, { x, y, speed: 7.5, life: 0.3, size: 0.16, colors: [[0.75, 0.92, 1], [1, 1, 1], [0.5, 0.75, 1]], drag: 7 });
+    this.spawn('glow', 1, { x, y, speed: 0, life: 0.16, size: 2.0, colors: [[0.8, 0.92, 1]] });
+    this.ring(x, y, '#cfeaff', 1.5, 0.25, false); this.ring(x, y, '#7fb8ff', 2.4, 0.4, false);
+  }
+
+  // Garde brisée : gerbe d'éclats chauds qui retombent
+  guardBreak(x, y) {
+    this.spawn('glow', 60, { x, y, speed: 8, life: 0.7, size: 0.15, colors: [[1, 0.85, 0.4], [1, 0.55, 0.2], [1, 1, 0.8]], grav: 14, drag: 2 });
+    this.ring(x, y, '#ffb347', 2.6, 0.45, false); this.ring(x, 0, '#ffcf6a', 2.4, 0.5);
+  }
+
+  // Ruée : traînée de poussière rasante
+  dash(x, dir) {
+    this.spawn('dust', 10, { x, y: 0.1, z: 0, dir: [-dir, 0.15], speed: 2.6, spread: 0.8, life: 0.45, size: 0.3, grow: 1.6, colors: [[0.8, 0.63, 0.43], [0.7, 0.52, 0.34]], drag: 3.5, jitter: 0.25, jitterZ: 0.5 });
+  }
+
+  // Finition : colonne de lumière et grande onde
+  finisher(x) {
+    this.spawn('glow', 90, { x, y: 0.4, speed: 5, up: 1.6, life: 1.0, size: 0.2, colors: [[1, 0.9, 0.5], [1, 0.6, 0.2], [1, 1, 0.9]], grav: 3, drag: 1.2, jitter: 0.6 });
+    this.ring(x, 0, '#fff0b0', 6.5, 0.9); this.ring(x, 0, '#ff8a3c', 4.5, 0.7); this.dust(x, 50, 4);
   }
 
   dust(x, amount = 12, power = 1.5) {
@@ -145,7 +166,7 @@ export class FX {
     this.rings = this.rings.filter((r) => {
       r.age += dt;
       const p = r.age / r.life;
-      if (p >= 1) { this.scene.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); return false; }
+      if (p >= 1) { this.scene.remove(r.mesh); r.mesh.material.dispose(); return false; }
       const s = 0.2 + (r.max) * (1 - (1 - p) * (1 - p));
       r.mesh.scale.set(s, s, s);
       r.mesh.material.opacity = 0.85 * (1 - p);
@@ -154,16 +175,27 @@ export class FX {
     this.ghosts = this.ghosts.filter((g) => {
       g.age += dt;
       const p = g.age / g.life;
-      if (p >= 1) { this.scene.remove(g.obj); g.mat.dispose(); return false; }
+      if (p >= 1) { this.scene.remove(g.obj); g.mat.dispose(); freeSkeletons(g.obj); return false; }
       g.mat.opacity = g.base * (1 - p);
       return true;
     });
   }
 
+  // Retire tous les effets en cours et libère ce qu'ils possèdent : un matériau par anneau et par
+  // image rémanente. La géométrie d'anneau est partagée ; celles des images rémanentes
+  // appartiennent au combattant copié. Aucune des deux n'est libérée ici.
   clear() {
-    for (const L of [this.glowLayer, this.dustLayer]) L.list.length = 0;
-    for (const r of this.rings) this.scene.remove(r.mesh);
-    for (const g of this.ghosts) this.scene.remove(g.obj);
+    for (const L of [this.glowLayer, this.dustLayer]) { L.list.length = 0; L.geo.setDrawRange(0, 0); }
+    for (const r of this.rings) { this.scene.remove(r.mesh); r.mesh.material.dispose(); }
+    for (const g of this.ghosts) { this.scene.remove(g.obj); g.mat.dispose(); freeSkeletons(g.obj); }
     this.rings = []; this.ghosts = [];
+  }
+
+  // Libération complète (fermeture du jeu ou rechargement du moteur).
+  dispose() {
+    this.clear();
+    for (const L of [this.glowLayer, this.dustLayer]) { this.scene.remove(L.pts); L.geo.dispose(); L.pts.material.dispose(); }
+    this.ringGeo.dispose(); this.tex.dispose();
+    this.ghostMat.dispose(); this.ghostMatBlue.dispose();
   }
 }

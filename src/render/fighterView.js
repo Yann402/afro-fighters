@@ -1,20 +1,25 @@
 import * as THREE from 'three';
 import { buildFighter } from './rig.js';
-import { KEYS, ZERO, targetPose, smoothingRate } from './poses.js';
+import { KEYS, ZERO, targetPose, smoothingRate, dampingRatio } from './poses.js';
+import { GlbRig, hasModel } from './glbFighter.js';
+import { CLOTH_MATERIALS } from './stylized.js';
 
 const YAW = Math.PI / 2 - 0.5; // vue de 3/4 vers la caméra
 const qA = new THREE.Quaternion();
-const qB = new THREE.Quaternion();
+const qB = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.15, -0.35, 0)); // orientation fixe du bouclier
 
 export class FighterView {
   constructor(charId, scene) {
     this.charId = charId;
-    const rig = buildFighter(charId);
+    // modèle GLB s'il est chargé, sinon ancien modèle construit par le code
+    this.glb = hasModel(charId) ? new GlbRig(charId) : null;
+    const rig = this.glb || buildFighter(charId);
     this.rig = rig;
     this.root = new THREE.Group();
     this.root.add(rig.root);
     scene.add(this.root);
     this.pose = { ...ZERO, ...targetPose({ char: { id: charId }, state: 'intro', t: 0 }, { time: 0, build: rig.build }) };
+    this.vel = { ...ZERO };
     this.time = 0;
     this.walkPhase = 0;
     this.build = rig.build;
@@ -24,16 +29,28 @@ export class FighterView {
     this.yaw = YAW;
     this.mirror = 1;
     this.initMirror = true;
-    this.ghosts = null;
-    this.hipBase = rig.J.hips.position.y;
+    this.hipBase = this.glb ? 0 : rig.J.hips.position.y;
     // contour léger (silhouette) pour lisibilité
     this.materials = [];
-    rig.root.traverse((o) => { if (o.isMesh && !this.materials.includes(o.material)) this.materials.push(o.material); });
+    if (this.glb) this.materials = this.glb.materials;
+    else rig.root.traverse((o) => { if (o.isMesh && !this.materials.includes(o.material)) this.materials.push(o.material); });
   }
 
+  // Propriété des ressources : chaque combattant possède ses géométries et ses matériaux
+  // (créés dans rig.js pour lui seul) et les libère ici. Les textures viennent d'un cache
+  // partagé entre tous les combattants (rig.js) : elles ne sont pas libérées.
+  // Les images rémanentes (fx.js) réutilisent ces géométries : appeler fx.clear() avant dispose().
   dispose(scene) {
     scene.remove(this.root);
-    if (this.ghosts) for (const g of this.ghosts) scene.remove(g.root);
+    this.disposed = true;
+    // modèle GLB : géométries et textures appartiennent au cache de chargement, partagé entre instances
+    if (this.glb) { this.glb.dispose(); return; }
+    const geos = new Set();
+    this.rig.root.traverse((o) => { if (o.isMesh) geos.add(o.geometry); });
+    for (const g of geos) g.dispose();
+    for (const m of this.materials) m.dispose();
+    this.materials.length = 0;
+    this.disposed = true;
   }
 
   snapPrev(f) { this.prevX = f.x; this.prevY = f.y; }
@@ -57,10 +74,16 @@ export class FighterView {
 
     if (f.state === 'walk') this.walkPhase += dt * (f.char.id === 'lekishon' ? 11 : 9) * (f.walkDir || 1);
 
-    // pose cible + lissage exponentiel → transitions fluides
+    // pose cible, rejointe par un ressort amorti : léger dépassement puis retour, comme un vrai geste
+    // (l'ancien lissage exponentiel donnait des mouvements mous, sans élan ni rebond).
     const target = targetPose(f, this, match);
-    const k = 1 - Math.exp(-smoothingRate(f) * dt);
-    for (const key of KEYS) this.pose[key] += (target[key] - this.pose[key]) * k;
+    const omega = smoothingRate(f) * 1.25, zeta = dampingRatio(f);
+    const n = Math.max(1, Math.ceil(dt * omega / 0.45)), h = dt / n;
+    for (const key of KEYS) {
+      let x = this.pose[key], v = this.vel[key];
+      for (let i = 0; i < n; i++) { v += (omega * omega * (target[key] - x) - 2 * zeta * omega * v) * h; x += v * h; }
+      this.pose[key] = x; this.vel[key] = v;
+    }
     const p = this.pose;
 
     // orientation : miroir selon le côté, rotation de 3/4
@@ -71,9 +94,11 @@ export class FighterView {
     if (Math.abs(wantMirror - this.mirror) < 0.02) this.mirror = wantMirror;
     const sx = Math.sign(this.mirror) * Math.max(0.08, Math.abs(this.mirror));
     this.root.position.set(x, y, 0);
-    this.rig.root.scale.x = sx;
+    const sc = this.glb ? this.glb.scale : 1;
+    this.rig.root.scale.set(sx * sc, sc, sc);
     this.rig.root.rotation.y = Math.sign(this.mirror || 1) * YAW;
 
+    if (this.glb) { this.glb.applyPose(p, extraFall); this.updateGlow(f, dt); return; }
     const J = this.rig.J;
     J.hips.position.y = this.hipBase + p.rootY;
     J.hips.rotation.set(p.fall + extraFall, p.turn, 0);
@@ -96,11 +121,14 @@ export class FighterView {
     const shield = this.rig.weapons.shield;
     if (shield) {
       qA.copy(J.shL.quaternion).multiply(J.elL.quaternion).invert();
-      qB.setFromEuler(new THREE.Euler(0.15, -0.35, 0));
       shield.quaternion.copy(qA).multiply(qB);
     }
 
-    // éclat lors d'un coup reçu / aura du spécial
+    this.updateGlow(f, dt);
+  }
+
+  // éclat lors d'un coup reçu / aura du spécial
+  updateGlow(f, dt) {
     this.flash = Math.max(0, this.flash - dt * 6);
     const special = f.state === 'attack' && f.move?.special;
     this.glow += ((special ? 1 : f.meter >= 100 ? 0.35 : 0) - this.glow) * Math.min(1, dt * 8);
@@ -114,10 +142,20 @@ export class FighterView {
     for (const m of this.rig.accents) if (m.emissive) m.emissive.setRGB(0.4 * this.glow + this.flash, 0.25 * this.glow + this.flash, 0.05 * this.glow + this.flash);
   }
 
-  // Positions monde utiles aux effets (pointe d'arme, mains)
-  worldPoint(name, out = new THREE.Vector3()) {
-    const J = this.rig.J;
-    const obj = name === 'blade' ? this.rig.weapons.spearBlade || J.handR : J[name] || J.spine;
-    return obj.getWorldPosition(out);
+  // Tenue alternative : reteint les matériaux de vêtement (sans effet sur le jeu lui-même).
+  setOutfit(tint) {
+    if (!this.glb) return;
+    for (const m of this.materials) if (CLOTH_MATERIALS.test(m.name)) m.color.set(tint || '#ffffff');
+  }
+
+  // Copie figée pour les images rémanentes (un maillage à squelette doit être dupliqué avec ses os).
+  snapshot() {
+    if (!this.glb) return this.root.clone(true);
+    const g = new THREE.Group();
+    g.position.copy(this.root.position);
+    const c = this.glb.snapshot();
+    c.traverse((o) => { if (o.userData.isOutline) o.visible = false; });
+    g.add(c);
+    return g;
   }
 }

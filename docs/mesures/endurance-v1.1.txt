@@ -1,0 +1,29 @@
+Moteur de rendu : ANGLE (Mesa, llvmpipe) — rendu logiciel, sans carte graphique
+Nature des mesures : STABILITÉ en environnement logiciel. Les colonnes « img/s », « image p95 ms » et
+« abandonné s » décrivent cet environnement (environ 4 images/s, match accéléré 4 fois) ; elles ne sont
+pas une référence de performances matérielles. Ce qui fait foi ici : géométries, textures, mémoire, erreurs.
+
+cycle | étape | geometries | textures | programs | sceneChildren | heapMB | pic géométries | durée s | img/s | image p95 ms | sim ms | rendu ms | abandonné s
+0 | écran titre | 88 | 9 | 12 | 3 | 7 |  |  |  |  |  |  | 
+1 | fin de match (modou, IA facile) | 218 | 11 | 12 | 5 | 9.2 | 218 | 40.4 | 3.9 | 366.7 | 1.042 | 4.791 | 91.183
+1 | retour au titre | 96 | 13 | 12 | 3 | 9.3 |  |  |  |  |  |  | 
+2 | fin de match (themba, IA normal) | 248 | 13 | 13 | 5 | 9.8 | 248 | 36.6 | 3.7 | 383.3 | 0.508 | 2.649 | 168.233
+2 | retour au titre | 96 | 13 | 12 | 3 | 9.8 |  |  |  |  |  |  | 
+3 | fin de match (lekishon, IA difficile) | 248 | 13 | 13 | 5 | 10 | 248 | 54.4 | 4 | 333.3 | 0.621 | 3.875 | 300.4
+3 | retour au titre | 96 | 13 | 12 | 3 | 9.7 |  |  |  |  |  |  | 
+4 | fin de match (modou, IA facile) | 247 | 13 | 13 | 5 | 9.9 | 247 | 43.2 | 3.9 | 333.4 | 0.23 | 3.199 | 402.917
+4 | retour au titre | 96 | 13 | 12 | 3 | 10 |  |  |  |  |  |  | 
+5 | fin de match (themba, IA normal) | 248 | 13 | 13 | 5 | 10.2 | 248 | 35.3 | 3.9 | 333.4 | 0.336 | 2.254 | 488.55
+5 | retour au titre | 96 | 13 | 12 | 3 | 10 |  |  |  |  |  |  | 
+6 | fin de match (lekishon, IA difficile) | 221 | 13 | 12 | 5 | 10.1 | 221 | 56.1 | 4.2 | 299.9 | 0.285 | 2.469 | 625.2
+6 | retour au titre | 96 | 13 | 12 | 3 | 10.4 |  |  |  |  |  |  | 
+7 | fin de match (modou, IA facile) | 247 | 13 | 13 | 5 | 10.2 | 247 | 43.4 | 4.1 | 333.3 | 0.14 | 3.171 | 731.25
+7 | retour au titre | 96 | 13 | 12 | 3 | 10 |  |  |  |  |  |  | 
+8 | fin de match (themba, IA normal) | 247 | 13 | 13 | 5 | 10.2 | 247 | 33.0 | 4.1 | 316.7 | 0.65 | 2.646 | 810.033
+8 | retour au titre | 96 | 13 | 12 | 3 | 10.2 |  |  |  |  |  |  | 
+
+Géométries : 96 après le 1er cycle, 96 après le dernier (écart +0)
+Textures   : 13 -> 13 (écart +0)
+Mémoire JS après ramasse-miettes : 9.3 Mo -> 10.2 Mo (pic 10.4 Mo)
+Erreurs de page : aucune
+RÉSULTAT : OK

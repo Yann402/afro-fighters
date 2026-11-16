@@ -1,0 +1,36 @@
+
+══ IA facile contre IA facile — 600 matchs, durée moyenne 136 s, manches au chrono : 195
+Taux de victoire global : modou 77% · themba 43% · lekishon 30%
+  modou contre themba : 74% – 26%   (avantage côté gauche J1 : 50%)
+  modou contre lekishon : 81% – 19%   (avantage côté gauche J1 : 48%)
+  themba contre lekishon : 59% – 41%   (avantage côté gauche J1 : 44%)
+Pouvoirs spéciaux :
+  modou     utilisés  568 · touche 80% · bloqué 0% · dans le vide 20% · puni ensuite 2% · dégâts moyens/usage 155
+  themba    utilisés  598 · touche 72% · bloqué 15% · dans le vide 13% · puni ensuite 6% · dégâts moyens/usage 121
+  lekishon  utilisés  591 · touche 52% · bloqué 25% · dans le vide 23% · puni ensuite 8% · dégâts moyens/usage 99
+Combo maximal observé : modou 195 (20% des PV) · themba 199 (21% des PV) · lekishon 195 (20% des PV)
+Jeu aérien : modou : 9921 sauts dont 21% avec attaque sautée réussie ; 3% des 9105 sauts adverses contrés au sol · themba : 10205 sauts dont 30% avec attaque sautée réussie ; 9% des 10098 sauts adverses contrés au sol · lekishon : 9546 sauts dont 29% avec attaque sautée réussie ; 10% des 10469 sauts adverses contrés au sol
+
+══ IA normal contre IA normal — 600 matchs, durée moyenne 90 s, manches au chrono : 0
+Taux de victoire global : modou 50% · themba 49% · lekishon 51%
+  modou contre themba : 48% – 52%   (avantage côté gauche J1 : 46%)
+  modou contre lekishon : 51% – 49%   (avantage côté gauche J1 : 52%)
+  themba contre lekishon : 47% – 53%   (avantage côté gauche J1 : 54%)
+Pouvoirs spéciaux :
+  modou     utilisés 1133 · touche 79% · bloqué 0% · dans le vide 21% · puni ensuite 6% · dégâts moyens/usage 155
+  themba    utilisés 1232 · touche 37% · bloqué 38% · dans le vide 25% · puni ensuite 14% · dégâts moyens/usage 61
+  lekishon  utilisés  882 · touche 21% · bloqué 43% · dans le vide 36% · puni ensuite 11% · dégâts moyens/usage 40
+Combo maximal observé : modou 195 (20% des PV) · themba 199 (21% des PV) · lekishon 195 (20% des PV)
+Jeu aérien : modou : 3656 sauts dont 18% avec attaque sautée réussie ; 9% des 3484 sauts adverses contrés au sol · themba : 3507 sauts dont 35% avec attaque sautée réussie ; 23% des 3092 sauts adverses contrés au sol · lekishon : 3159 sauts dont 43% avec attaque sautée réussie ; 30% des 3746 sauts adverses contrés au sol
+
+══ IA difficile contre IA difficile — 600 matchs, durée moyenne 83 s, manches au chrono : 0
+Taux de victoire global : modou 60% · themba 38% · lekishon 52%
+  modou contre themba : 74% – 26%   (avantage côté gauche J1 : 49%)
+  modou contre lekishon : 46% – 54%   (avantage côté gauche J1 : 51%)
+  themba contre lekishon : 50% – 50%   (avantage côté gauche J1 : 52%)
+Pouvoirs spéciaux :
+  modou     utilisés 1446 · touche 41% · bloqué 0% · dans le vide 59% · puni ensuite 8% · dégâts moyens/usage 81
+  themba    utilisés 1578 · touche 22% · bloqué 56% · dans le vide 21% · puni ensuite 10% · dégâts moyens/usage 40
+  lekishon  utilisés 1608 · touche 5% · bloqué 39% · dans le vide 55% · puni ensuite 10% · dégâts moyens/usage 10
+Combo maximal observé : modou 195 (20% des PV) · themba 199 (21% des PV) · lekishon 195 (20% des PV)
+Jeu aérien : modou : 219 sauts dont 0% avec attaque sautée réussie ; 0% des 743 sauts adverses contrés au sol · themba : 659 sauts dont 47% avec attaque sautée réussie ; 27% des 119 sauts adverses contrés au sol · lekishon : 413 sauts dont 25% avec attaque sautée réussie ; 32% des 429 sauts adverses contrés au sol

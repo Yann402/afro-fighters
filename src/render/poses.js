@@ -33,6 +33,10 @@ export const POSES = {
       wind: P({ rootY: -0.25, lean: 0.55, twist: 0, head: -0.3, rShF: 0.6, rShA: 0.8, rEl: 0.6, lShF: 0.6, lShA: 0.8, lEl: 0.6, lHip: 0.6, lKnee: 0.9, rHip: -0.1, rKnee: 0.8, spread: 0.3 }),
       strike: P({ rootY: -0.3, lean: 0.85, twist: 0, head: -0.5, rShF: 1.6, rShA: 0.25, rEl: 0.3, lShF: 1.6, lShA: 0.25, lEl: 0.3, lHip: 1.0, lKnee: 1.0, rHip: -0.45, rKnee: 0.4, spread: 0.2 }),
     },
+    medium: { // coup d'épaule : l'épaule gauche en avant, bras ramassés
+      wind: P({ rootY: -0.22, lean: 0.3, twist: 0.5, turn: 0.2, head: -0.2, rShF: 0.3, rShA: 0.5, rEl: 1.6, lShF: 0.5, lShA: 0.3, lEl: 1.9, lHip: 0.5, lKnee: 0.9, rHip: -0.1, rKnee: 0.8, spread: 0.25 }),
+      strike: P({ rootY: -0.18, lean: 0.75, twist: -0.75, turn: -0.35, head: -0.45, rShF: -0.2, rShA: 0.6, rEl: 1.2, lShF: 0.7, lShA: 0.15, lEl: 2.1, lHip: 1.0, lKnee: 0.8, rHip: -0.6, rKnee: 0.25, spread: 0.2 }),
+    },
     air: {
       wind: P({ lean: -0.2, rShF: 2.6, rShA: 0.4, rEl: 0.5, lShF: 2.6, lShA: 0.4, lEl: 0.5, rHip: 0.8, rKnee: 1.4, lHip: 0.8, lKnee: 1.4 }),
       strike: P({ lean: 0.7, rShF: 1.2, rShA: 0.9, rEl: 0.2, lShF: 1.2, lShA: 0.9, lEl: 0.2, rHip: 0.3, rKnee: 0.4, lHip: 0.3, lKnee: 0.4 }),
@@ -54,6 +58,10 @@ export const POSES = {
       wind: P({ rootY: -0.1, lean: 0.0, twist: -0.95, turn: -0.45, lShF: 1.1, lShA: 0.1, lEl: 1.2, rShF: -0.4, rShA: 0.4, rEl: 1.5, rW: 1.2, lHip: 0.3, lKnee: 0.4, rHip: -0.4, rKnee: 0.4, spread: 0.14 }),
       strike: P({ rootY: -0.17, lean: 0.45, twist: 0.35, turn: 0.1, lShF: 0.5, lShA: 0.5, lEl: 1.4, rShF: 1.5, rShA: 0.1, rEl: 0.05, rW: 1.55, lHip: 0.85, lKnee: 0.65, rHip: -0.5, rKnee: 0.2, spread: 0.14 }),
     },
+    medium: { // fauchage : la lance balaie au ras du sol
+      wind: P({ rootY: -0.2, lean: 0.25, twist: 0.7, turn: 0.2, lShF: 1.1, lShA: 0.1, lEl: 1.2, rShF: 0.2, rShA: 1.0, rEl: 0.9, rW: 1.9, lHip: 0.5, lKnee: 0.8, rHip: -0.3, rKnee: 0.7, spread: 0.16 }),
+      strike: P({ rootY: -0.36, lean: 0.6, twist: -0.6, turn: -0.3, lShF: 0.9, lShA: 0.3, lEl: 1.4, rShF: 0.75, rShA: 0.0, rEl: 0.15, rW: 1.5, lHip: 1.05, lKnee: 1.25, rHip: -0.6, rKnee: 0.55, spread: 0.16 }),
+    },
     air: {
       wind: P({ lean: -0.1, lShF: 1.0, lEl: 1.2, rShF: 2.4, rShA: 0.3, rEl: 0.6, rW: 1.6, rHip: 0.9, rKnee: 1.5, lHip: 0.9, lKnee: 1.5 }),
       strike: P({ lean: 0.55, lShF: 0.9, lEl: 1.0, rShF: 1.1, rShA: 0.2, rEl: 0.05, rW: 2.4, rHip: 0.5, rKnee: 0.6, lHip: 0.4, lKnee: 0.5 }),
@@ -74,6 +82,10 @@ export const POSES = {
     heavy: { // lance : grande fente
       wind: P({ rootY: -0.06, lean: -0.1, twist: -1.0, turn: -0.5, rShF: 0.1, rShA: 0.3, rEl: 1.6, rW: 1.6, lShF: 0.9, lShA: 0.3, lEl: 0.5, lW: 0, lHip: 0.2, lKnee: 0.25, rHip: -0.3, rKnee: 0.3, spread: 0.1 }),
       strike: P({ rootY: -0.28, lean: 0.55, twist: 0.4, turn: 0.15, rShF: 1.55, rShA: 0.05, rEl: 0.0, rW: 1.57, lShF: -0.5, lShA: 0.4, lEl: 0.2, lHip: 1.15, lKnee: 1.1, rHip: -0.7, rKnee: 0.1, spread: 0.08 }),
+    },
+    medium: { // revers de hampe : la lance tourne à l'horizontale
+      wind: P({ rootY: -0.08, lean: 0.05, twist: 0.9, turn: 0.35, rShF: 0.9, rShA: 0.9, rEl: 1.3, rW: 0.3, lShF: 0.6, lShA: 0.3, lEl: 1.2, lW: 0.6, lHip: 0.3, lKnee: 0.35, rHip: -0.25, rKnee: 0.3, spread: 0.1 }),
+      strike: P({ rootY: -0.14, lean: 0.3, twist: -0.85, turn: -0.4, rShF: 1.35, rShA: -0.2, rEl: 0.25, rW: 0.2, lShF: 0.2, lShA: 0.5, lEl: 1.0, lW: 0.6, lHip: 0.7, lKnee: 0.55, rHip: -0.45, rKnee: 0.2, spread: 0.1 }),
     },
     air: {
       wind: P({ lean: -0.15, rShF: 0.4, rEl: 1.3, rW: 1.3, lShF: 2.6, lEl: 1.3, lW: 0.6, rHip: 0.7, rKnee: 1.3, lHip: 0.7, lKnee: 1.3 }),
@@ -159,6 +171,10 @@ const SPECIALS = {
   },
 };
 
+// Les poses de réaction communes gardent l'orientation des armes propre au combattant
+// (sinon la lance traverse le corps quand il encaisse un coup).
+const grip = (pose, st) => ({ ...pose, rW: st.rW, lW: st.lW });
+
 // ───────────────────────────── Pose cible selon l'état logique
 export function targetPose(f, view, match) {
   const id = f.char.id;
@@ -202,14 +218,30 @@ export function targetPose(f, view, match) {
       if (m.id === 'throw' && id !== 'modou') return attackPose({ ...lib, throwSet: null }, 'heavyGrab', f) ;
       return attackPose(lib, m.id, f);
     }
+    case 'dash': {
+      if (f.dashDir > 0) { // ruée : buste en avant, grande foulée
+        const s = Math.sin(t * 0.75);
+        return add(st, { rootY: -0.1, lean: 0.5, lHip: 0.55 + s * 0.6, rHip: -0.35 - s * 0.6, lKnee: 0.7, rKnee: 0.6, rShF: -0.3, lShF: 0.25 });
+      }
+      const up = Math.sin(clamp01(t / 14) * Math.PI);   // esquive : petit bond en arrière, buste effacé
+      return add(st, { rootY: up * 0.1 - 0.05, lean: -0.32, twist: 0.25, head: 0.15, lHip: 0.5 * up, rHip: 0.2 * up, lKnee: 0.5 + 0.6 * up, rKnee: 0.4 + 0.5 * up });
+    }
+    case 'parried': { // contré : l'arme est repoussée, le corps bascule en arrière
+      const k = clamp01(f.stun / 22);
+      return mix(st, P({ rootY: -0.05, lean: -0.5, twist: 0.5, head: -0.5, rShF: 2.2, rShA: 0.9, rEl: 0.5, rW: 0.8, lShF: 0.9, lShA: 1.0, lEl: 0.6, lHip: 0.1, lKnee: 0.3, rHip: -0.45, rKnee: 0.35, spread: 0.2 }), 0.3 + 0.7 * k);
+    }
+    case 'dizzy': { // garde brisée : le combattant titube
+      const s = Math.sin(time * 5), c2 = Math.cos(time * 3.3);
+      return P({ rootY: -0.12 + c2 * 0.02, lean: 0.28 + s * 0.08, side: s * 0.14, twist: c2 * 0.15, head: 0.45 + c2 * 0.15, rShF: 0.25 + s * 0.1, rShA: 0.25, rEl: 0.5, rW: 1.0, lShF: 0.2 - s * 0.1, lShA: 0.3, lEl: 0.45, lHip: 0.2 + s * 0.1, lKnee: 0.5, rHip: 0.05 - s * 0.1, rKnee: 0.45, spread: 0.2 });
+    }
     case 'hitstun': {
       const k = clamp01(f.stun / 10);
-      return mix(st, HURT, 0.4 + 0.6 * k);
+      return mix(st, grip(HURT, st), 0.4 + 0.6 * k);
     }
     case 'launched': case 'ko': {
       if (f.y > 0.02 || f.state === 'launched') {
         const k = clamp01(0.5 - f.vy * 3);
-        return mix(LAUNCH, add(LAUNCH, { fall: -1.3 }), k);
+        return mix(grip(LAUNCH, st), grip(add(LAUNCH, { fall: -1.3 }), st), k);
       }
       return DOWN(view.build);
     }
@@ -229,7 +261,7 @@ export function targetPose(f, view, match) {
       if (p < 1) return mix(lift, slam, easeInOut((p - 0.25) / 0.75) ** 2);
       return mix(slam, st, easeInOut(clamp01((t - anim.slamAt) / (anim.length - anim.slamAt))));
     }
-    case 'thrown': return add(LAUNCH, { fall: -0.4 });
+    case 'thrown': return grip(add(LAUNCH, { fall: -0.4 }), st);
     case 'win': return lib.win(t);
     case 'lose': return add(HURT, { lean: 0.5, head: 0.5 });
     default: return st;
@@ -262,8 +294,23 @@ export function smoothingRate(f) {
     case 'down': return 18;
     case 'throwing': case 'thrown': return 22;
     case 'guard': return 22;
+    case 'dash': return 24;
+    case 'parried': return f.t < 4 ? 40 : 14;
+    case 'dizzy': return 9;
     case 'walk': return 16;
     case 'jumpsquat': return 30;
     default: return 11;
+  }
+}
+
+// Amortissement du ressort d'animation : plus bas = plus de rebond.
+export function dampingRatio(f) {
+  switch (f.state) {
+    case 'attack': case 'airattack': return f.phase === 'recovery' ? 0.72 : 0.9;
+    case 'hitstun': case 'blockstun': case 'parried': return 0.55;
+    case 'land': case 'idle': return 0.7;
+    case 'dizzy': return 0.6;
+    case 'thrown': case 'throwing': case 'launched': case 'ko': case 'down': return 0.95;
+    default: return 0.82;
   }
 }
