@@ -1,0 +1,168 @@
+{
+ "renderer": {
+  "name": "ANGLE (Mesa, Vulkan 1.4.335 (llvmpipe (LLVM 20.1.2 256 bits) (0x00000000)), llvmpipe)",
+  "software": true
+ },
+ "rows": [
+  {
+   "cycle": 0,
+   "étape": "écran titre",
+   "geometries": 169,
+   "textures": 10,
+   "programs": 13,
+   "heapMB": 21.4,
+   "sceneChildren": 3
+  },
+  {
+   "cycle": 1,
+   "étape": "fin de match (modou contre themba, IA facile)",
+   "geometries": 234,
+   "textures": 22,
+   "programs": 21,
+   "heapMB": 17.1,
+   "sceneChildren": 5,
+   "pic géométries": 234,
+   "durée s": 70.0,
+   "img/s": 2.5,
+   "image p95 ms": 500,
+   "sim ms": 0.327,
+   "rendu ms": 4.032,
+   "abandonné s": 108.667
+  },
+  {
+   "cycle": 1,
+   "étape": "retour au titre",
+   "geometries": 275,
+   "textures": 13,
+   "programs": 17,
+   "heapMB": 16.8,
+   "sceneChildren": 3
+  },
+  {
+   "cycle": 2,
+   "étape": "fin de match (themba contre lekishon, IA normal)",
+   "geometries": 275,
+   "textures": 20,
+   "programs": 21,
+   "heapMB": 17.6,
+   "sceneChildren": 5,
+   "pic géométries": 275,
+   "durée s": 64.7,
+   "img/s": 2.5,
+   "image p95 ms": 483.4,
+   "sim ms": 0.664,
+   "rendu ms": 3.658,
+   "abandonné s": 207.167
+  },
+  {
+   "cycle": 2,
+   "étape": "retour au titre",
+   "geometries": 275,
+   "textures": 13,
+   "programs": 17,
+   "heapMB": 17.1,
+   "sceneChildren": 3
+  },
+  {
+   "cycle": 3,
+   "étape": "fin de match (lekishon contre modou, deux joueurs)",
+   "geometries": 275,
+   "textures": 24,
+   "programs": 20,
+   "heapMB": 17.7,
+   "sceneChildren": 5,
+   "pic géométries": 275,
+   "durée s": 62.5,
+   "img/s": 2.5,
+   "image p95 ms": 500.1,
+   "sim ms": 0.356,
+   "rendu ms": 4.021,
+   "abandonné s": 308.317
+  },
+  {
+   "cycle": 3,
+   "étape": "retour au titre",
+   "geometries": 275,
+   "textures": 13,
+   "programs": 17,
+   "heapMB": 17.3,
+   "sceneChildren": 3
+  },
+  {
+   "cycle": 4,
+   "étape": "fin de match (modou contre themba, IA facile)",
+   "geometries": 275,
+   "textures": 23,
+   "programs": 21,
+   "heapMB": 17.8,
+   "sceneChildren": 5,
+   "pic géométries": 275,
+   "durée s": 69.4,
+   "img/s": 2.5,
+   "image p95 ms": 500.1,
+   "sim ms": 0.297,
+   "rendu ms": 4.282,
+   "abandonné s": 417.65
+  },
+  {
+   "cycle": 4,
+   "étape": "retour au titre",
+   "geometries": 275,
+   "textures": 13,
+   "programs": 17,
+   "heapMB": 17.3,
+   "sceneChildren": 3
+  },
+  {
+   "cycle": 5,
+   "étape": "fin de match (themba contre lekishon, entraînement, 60 s)",
+   "geometries": 275,
+   "textures": 20,
+   "programs": 21,
+   "heapMB": 17.9,
+   "sceneChildren": 5,
+   "pic géométries": 275,
+   "durée s": 61.2,
+   "img/s": 2.3,
+   "image p95 ms": 533.4,
+   "sim ms": 1.611,
+   "rendu ms": 3.626,
+   "abandonné s": 510.583
+  },
+  {
+   "cycle": 5,
+   "étape": "retour au titre",
+   "geometries": 275,
+   "textures": 13,
+   "programs": 17,
+   "heapMB": 17.4,
+   "sceneChildren": 3
+  },
+  {
+   "cycle": 6,
+   "étape": "fin de match (lekishon contre modou, IA difficile)",
+   "geometries": 275,
+   "textures": 24,
+   "programs": 20,
+   "heapMB": 17.9,
+   "sceneChildren": 5,
+   "pic géométries": 275,
+   "durée s": 94.8,
+   "img/s": 2.5,
+   "image p95 ms": 483.4,
+   "sim ms": 0.37,
+   "rendu ms": 3.935,
+   "abandonné s": 665.75
+  },
+  {
+   "cycle": 6,
+   "étape": "retour au titre",
+   "geometries": 275,
+   "textures": 13,
+   "programs": 17,
+   "heapMB": 17.4,
+   "sceneChildren": 3
+  }
+ ],
+ "errors": []
+}

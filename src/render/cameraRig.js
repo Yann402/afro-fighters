@@ -11,6 +11,7 @@ export class CameraRig {
     this.focus = null;     // { x, y, until, zoom }
     this.mode = 'fight';
     this.orbitT = 0;
+    this.shiftX = 0;
   }
 
   shake(a) { this.shakeAmt = Math.min(0.35, this.shakeAmt + a); }
@@ -41,6 +42,8 @@ export class CameraRig {
         if (f.t <= 0) this.focus = null;
       }
     }
+    // décalage latéral : laisse la place à un panneau d'interface (liste des coups)
+    tx += this.shiftX; lx += this.shiftX;
     const k = 1 - Math.exp(-(this.focus ? 7 : Math.max(a.y || 0, b.y || 0) > 0.6 ? 7 : 4.5) * dt);
     this.pos.x += (tx - this.pos.x) * k;
     this.pos.y += (ty - this.pos.y) * k;

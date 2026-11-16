@@ -74,6 +74,11 @@ export class Audio {
     this.tone({ dur: big ? 0.7 : 0.4, f0: big ? 110 : 130, f1: 28, gain: 1.0 });
     this.noiseHit({ dur: big ? 0.6 : 0.3, freq: 400, type: 'lowpass', gain: 0.9 });
   }
+  parry() { if (!this.ok) return; this.tone({ dur: 0.22, f0: 1400, f1: 900, type: 'triangle', gain: 0.4 }); this.noiseHit({ dur: 0.1, freq: 5200, q: 8, gain: 0.45 }); this.drum('slap', 0.02); }
+  guardBreak() { if (!this.ok) return; this.noiseHit({ dur: 0.45, freq: 1800, sweep: 300, q: 1.5, gain: 0.8 }); this.tone({ dur: 0.4, f0: 220, f1: 60, type: 'sawtooth', gain: 0.35 }); }
+  dash() { if (this.ok) this.noiseHit({ dur: 0.16, freq: 700, sweep: 2200, q: 1, gain: 0.2 }); }
+  finisher() { if (!this.ok) return; this.tone({ dur: 1.6, f0: 80, f1: 30, gain: 1.0 }); for (let i = 0; i < 8; i++) this.drum(i % 2 ? 'bass' : 'slap', 0.15 + i * 0.09); }
+  reward() { if (!this.ok) return; [0, 0.1, 0.2, 0.34].forEach((t, i) => this.tone({ t, dur: 0.25, f0: [392, 494, 587, 784][i], f1: [392, 494, 587, 784][i], type: 'triangle', gain: 0.3 })); }
   grab() { if (this.ok) this.noiseHit({ dur: 0.1, freq: 900, q: 3, gain: 0.35 }); }
 
   // Tambours (djembé synthétisé) : basse, tonique, claqué

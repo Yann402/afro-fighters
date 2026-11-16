@@ -15,7 +15,7 @@ export const CHARACTERS = {
     title: 'Le Roc de la Médina',
     culture: 'Lutte sénégalaise · Laamb',
     blurb: 'Lutteur puissant. Saisies, projections et une résistance hors norme.',
-    style: 'Grappler',
+    style: 'Lutteur',
     stats: { force: 5, vitesse: 2, portee: 2, defense: 5 },
     hp: 1120, defense: 0.93,
     walk: 0.039, backWalk: 0.029,

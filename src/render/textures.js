@@ -99,17 +99,21 @@ export const patternTex = (base = '#7a3b1d', a = '#e8c27a', b = '#1b1b1b') => ca
   g.fillRect(0, 0, w, 5); g.fillRect(0, h - 5, w, 5);
 }, [8, 1]);
 
-// Dégradé du ciel au crépuscule
-export const skyTex = () => canvasTex(16, 512, (g, w, h) => {
+// Dégradé du ciel : liste de [position, couleur] du zénith (0) au sol (1)
+export const skyTex = (stops = [[0.0, '#1a1236'], [0.35, '#57305a'], [0.55, '#c4553a'], [0.68, '#f1a54a'], [0.75, '#f6c873'], [1.0, '#3a2414']]) => canvasTex(16, 512, (g, w, h) => {
   const gr = g.createLinearGradient(0, 0, 0, h);
-  gr.addColorStop(0.0, '#1a1236');
-  gr.addColorStop(0.35, '#57305a');
-  gr.addColorStop(0.55, '#c4553a');
-  gr.addColorStop(0.68, '#f1a54a');
-  gr.addColorStop(0.75, '#f6c873');
-  gr.addColorStop(1.0, '#3a2414');
+  for (const [t, c] of stops) gr.addColorStop(t, c);
   g.fillStyle = gr; g.fillRect(0, 0, w, h);
 });
+
+// Enduit de terre (banco) des tours
+export const mudTex = () => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#b97c4e'; g.fillRect(0, 0, w, h);
+  const r = rng(23);
+  for (let i = 0; i < 2600; i++) { g.fillStyle = r() < 0.5 ? 'rgba(90,50,25,0.14)' : 'rgba(255,220,170,0.12)'; g.fillRect(r() * w, r() * h, 3 + r() * 5, 2); }
+  g.strokeStyle = 'rgba(80,45,22,0.18)'; g.lineWidth = 2;
+  for (let i = 0; i < 9; i++) { g.beginPath(); g.moveTo(0, r() * h); g.bezierCurveTo(w * 0.3, r() * h, w * 0.6, r() * h, w, r() * h); g.stroke(); }
+}, [2, 3]);
 
 // Sprite doux (particules)
 export const softDotTex = () => canvasTex(64, 64, (g, w, h) => {

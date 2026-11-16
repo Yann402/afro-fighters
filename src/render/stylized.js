@@ -26,6 +26,9 @@ function rimPatch(material) {
 }
 
 let outlineMat = null;
+let outlinesOn = true;
+// Active ou coupe le liseré de silhouette (qualité graphique basse).
+export function setOutlines(on) { outlinesOn = on; if (outlineMat) outlineMat.visible = on; }
 function getOutlineMaterial() {
   if (outlineMat) return outlineMat;
   outlineMat = new THREE.MeshBasicMaterial({ color: OUTLINE.color, side: THREE.BackSide, fog: true });
@@ -36,6 +39,7 @@ function getOutlineMaterial() {
       .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += normalize(normal) * uOutline;');
   };
   outlineMat.customProgramCacheKey = () => 'afro-outline';
+  outlineMat.visible = outlinesOn;
   return outlineMat;
 }
 

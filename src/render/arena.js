@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { sandTex, patternTex, skyTex } from './textures.js';
+import { sandTex, patternTex, skyTex, mudTex } from './textures.js';
 
 const m = (color, o = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, ...o });
 
@@ -57,30 +57,56 @@ export function buildArena(scene, renderer) {
   wall.position.y = 0.55; wall.receiveShadow = true;
   group.add(wall);
 
-  // Public en silhouette (instancié)
-  const crowdGeo = new THREE.CapsuleGeometry(0.22, 0.5, 2, 5);
-  const crowdMat = m('#2b1820', { roughness: 1 });
+  // Public : corps drapés de couleurs variées et têtes, en deux maillages instanciés
+  const crowdGeo = new THREE.CapsuleGeometry(0.22, 0.5, 2, 6);
+  const headGeo = new THREE.IcosahedronGeometry(0.15, 1);
   const N = 260;
-  const crowd = new THREE.InstancedMesh(crowdGeo, crowdMat, N);
+  const crowd = new THREE.InstancedMesh(crowdGeo, m('#ffffff', { roughness: 1, flatShading: false }), N);
+  const heads = new THREE.InstancedMesh(headGeo, m('#3a2218', { roughness: 0.9, flatShading: false }), N);
   const dummy = new THREE.Object3D();
   const crowdData = [];
+  const cloth = ['#8a2a22', '#b5651d', '#24507a', '#6b3a6b', '#2e6b4a', '#c79a3a', '#d8c8a8', '#4a2a22', '#a8452a', '#1f3a6b'];
+  const tint = new THREE.Color();
   for (let i = 0; i < N; i++) {
     const row = i % 3;
-    const a = Math.PI * 0.58 + (Math.floor(i / 3) / (N / 3)) * Math.PI * 0.84 + (Math.random() - 0.5) * 0.02;
+    const a = Math.PI * 0.58 + (Math.floor(i / 3) / (N / 3)) * Math.PI * 0.84 + (Math.random() - 0.5) * 0.03;
     const r = 12.6 + row * 1.1;
-    dummy.position.set(Math.sin(a) * r, 0.85 + row * 0.55, Math.cos(a) * r);
-    const s = 0.9 + Math.random() * 0.25;
-    dummy.scale.set(s, s, s);
-    dummy.updateMatrix();
-    crowd.setMatrixAt(i, dummy.matrix);
-    crowdData.push({ base: dummy.position.y, phase: Math.random() * 10, s, x: dummy.position.x, z: dummy.position.z });
+    const sc = 0.85 + Math.random() * 0.3;
+    crowdData.push({ base: 0.85 + row * 0.55, phase: Math.random() * 10, s: sc, x: Math.sin(a) * r, z: Math.cos(a) * r, speed: 5 + Math.random() * 4, keen: 0.4 + Math.random() * 0.9 });
+    crowd.setColorAt(i, tint.set(cloth[Math.floor(Math.random() * cloth.length)]).multiplyScalar(0.55));
   }
-  group.add(crowd);
+  crowd.instanceColor.needsUpdate = true;
+  group.add(crowd); group.add(heads);
   // Gradins
   for (let row = 0; row < 3; row++) {
     const step = new THREE.Mesh(new THREE.CylinderGeometry(12.9 + row * 1.1, 12.9 + row * 1.1, 0.3 + row * 0.55, 40, 1, true, Math.PI * 0.55, Math.PI * 0.9), m('#5a3420'));
     step.material.side = THREE.DoubleSide;
     step.position.y = (0.3 + row * 0.55) / 2; group.add(step);
+  }
+
+  // Enceinte de banco derrière les gradins : tours effilées hérissées de bois (style soudano-sahélien)
+  const mud = m('#ffffff', { map: mudTex(), flatShading: false, roughness: 1 });
+  const stick = m('#3b2414');
+  const tower = (x, z, hgt, wid) => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(wid * 0.52, wid, hgt, 4, 1), mud);
+    body.rotation.y = Math.PI / 4; body.position.y = hgt / 2; g.add(body);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(wid * 0.34, hgt * 0.16, 6), mud); tip.position.y = hgt * 1.07; g.add(tip);
+    for (let row = 0; row < 4; row++) for (let k = -1; k <= 1; k++) {
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.9, 4), stick);
+      const y = hgt * (0.3 + row * 0.16), w2 = wid * (1 - 0.48 * (y / hgt)) * 0.72;
+      st.rotation.x = Math.PI / 2; st.position.set(k * w2 * 0.55, y, w2 * 0.72 + 0.3); g.add(st);
+    }
+    g.position.set(x, 0, z); g.lookAt(0, 0, 0); group.add(g);
+  };
+  for (const [x, z, hgt, wid] of [[-15, -15.5, 8.5, 2.4], [-8, -18, 11, 2.8], [0, -19.5, 13.5, 3.2], [8, -18, 11, 2.8], [15, -15.5, 8.5, 2.4]]) tower(x, z, hgt, wid);
+  for (const [x, z, len, rot] of [[-11.5, -16.9, 7.6, 0.33], [-4, -18.9, 8.2, 0.19], [4, -18.9, 8.2, -0.19], [11.5, -16.9, 7.6, -0.33]]) {
+    const wallSeg = new THREE.Mesh(new THREE.BoxGeometry(len, 5.2, 1.1), mud);
+    wallSeg.position.set(x, 2.6, z); wallSeg.rotation.y = rot; group.add(wallSeg);
+    for (let k = 0; k < 5; k++) {
+      const cr = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.9, 5), mud);
+      cr.position.set(x + Math.cos(rot) * (k - 2) * len / 5.5, 5.6, z - Math.sin(rot) * (k - 2) * len / 5.5); group.add(cr);
+    }
   }
 
   // Baobabs
@@ -152,9 +178,31 @@ export function buildArena(scene, renderer) {
     ban.position.set(x + 0.52, 3.2, -10.6); group.add(ban);
   }
 
+  // Ambiances : mêmes décors, autre heure
+  const AMBIANCES = {
+    crepuscule: { sky: undefined, fog: ['#b0603f', 22, 70], hemi: ['#ffd7a8', '#4a2a2a', 1.15], key: ['#ffb070', 2.6, [-7, 9, 8]], rim: ['#7a8cff', 0.9], sun: ['#ffd38a', '#ff9d4d', 1, [-18, 9]], torch: 1, exposure: 1.05 },
+    nuit: { sky: [[0, '#05060f'], [0.45, '#0e1430'], [0.7, '#243055'], [0.76, '#3a3a5a'], [1, '#0a0806']], fog: ['#141a33', 16, 60], hemi: ['#6f84c8', '#1a1420', 0.55], key: ['#a9bdff', 1.5, [6, 10, 7]], rim: ['#ff9a50', 1.3], sun: ['#e6ecff', '#8fa8ff', 0.5, [20, 22]], torch: 2.6, exposure: 1.15 },
+    aube: { sky: [[0, '#5b86c4'], [0.4, '#a9c3e6'], [0.62, '#f3cfc0'], [0.72, '#ffe2b0'], [0.76, '#fff0cf'], [1, '#4a3626']], fog: ['#e3b79c', 26, 80], hemi: ['#fff0e0', '#6a5040', 1.35], key: ['#ffe6c0', 2.9, [8, 8, 8]], rim: ['#9ad0ff', 0.7], sun: ['#fff3c8', '#ffd08a', 1, [22, 6]], torch: 0.35, exposure: 1.0 },
+  };
   let crowdT = 0;
+  let torchScale = 1;
   return {
     group,
+    key,
+    ambiance: 'crepuscule',
+    setAmbiance(id) {
+      const A = AMBIANCES[id] || AMBIANCES.crepuscule;
+      this.ambiance = AMBIANCES[id] ? id : 'crepuscule';
+      const old = sky.material.map; sky.material.map = skyTex(A.sky); sky.material.needsUpdate = true; old.dispose();
+      scene.fog.color.set(A.fog[0]); scene.fog.near = A.fog[1]; scene.fog.far = A.fog[2];
+      hemi.color.set(A.hemi[0]); hemi.groundColor.set(A.hemi[1]); hemi.intensity = A.hemi[2];
+      key.color.set(A.key[0]); key.intensity = A.key[1]; key.position.set(...A.key[2]);
+      rim.color.set(A.rim[0]); rim.intensity = A.rim[1];
+      sun.material.color.set(A.sun[0]); sunGlow.material.color.set(A.sun[1]); sun.scale.setScalar(A.sun[2]); sunGlow.scale.setScalar(A.sun[2]);
+      sun.position.set(A.sun[3][0], A.sun[3][1], -100); sunGlow.position.set(A.sun[3][0], A.sun[3][1], -101);
+      torchScale = A.torch;
+      renderer.toneMappingExposure = A.exposure;
+    },
     excitement: 0,
     update(dt) {
       crowdT += dt;
@@ -162,19 +210,20 @@ export function buildArena(scene, renderer) {
       for (const t of torches) {
         const f = Math.sin(crowdT * 17 + t.seed) * 0.5 + Math.sin(crowdT * 9.3 + t.seed * 2) * 0.5;
         t.flame.scale.set(1 + f * 0.08, 1 + f * 0.18, 1 + f * 0.08);
-        t.light.intensity = 5.5 + f * 1.2;
+        t.light.intensity = (5.5 + f * 1.2) * torchScale;
       }
-      // le public s'anime selon l'intensité du combat
-      const ex = 0.02 + this.excitement * 0.18;
+      // le public s'anime selon l'intensité du combat ; chaque spectateur a son rythme et son entrain
+      const ex = 0.015 + this.excitement * 0.2;
       for (let i = 0; i < crowdData.length; i++) {
         const c = crowdData[i];
-        const jump = Math.max(0, Math.sin(crowdT * (6 + (i % 5)) + c.phase)) * ex;
-        dummy.position.set(c.x, c.base + jump, c.z);
-        dummy.scale.setScalar(c.s);
-        dummy.updateMatrix();
-        crowd.setMatrixAt(i, dummy.matrix);
+        const jump = Math.max(0, Math.sin(crowdT * c.speed + c.phase)) * ex * c.keen;
+        const sway = Math.sin(crowdT * 1.3 + c.phase) * 0.03;
+        dummy.position.set(c.x + sway, c.base + jump, c.z);
+        dummy.scale.setScalar(c.s); dummy.rotation.z = sway * 1.5;
+        dummy.updateMatrix(); crowd.setMatrixAt(i, dummy.matrix);
+        dummy.position.y += 0.52 * c.s; dummy.updateMatrix(); heads.setMatrixAt(i, dummy.matrix);
       }
-      crowd.instanceMatrix.needsUpdate = true;
+      crowd.instanceMatrix.needsUpdate = true; heads.instanceMatrix.needsUpdate = true;
     },
   };
 }
